@@ -20,7 +20,7 @@ https://github.com/openjfx/samples/tree/master/HelloFX/Gradle/hellofx
 
 I made the following changes to my build.gradle file:
 
-* I Downgraded the example to Java 11 as that is the version I’m using. I also altered the project name accordingly.
+* I Downgraded the example to Java 11 as that is the version Iï¿½m using. I also altered the project name accordingly.
 
 * I added the Maven Repositories: mavenLocal() and mavenCentral(). This allowed me to add the following dependencies:
 
@@ -29,7 +29,7 @@ I made the following changes to my build.gradle file:
 
 I searched the internet for the best API for reading and writing to a serial port in Java and found that: com.github.purejavacomm:purejavacomm:1.0.2.RELEASE seemed most appropriate for my application.
 
-This allows me to use the serial and serial monitor API’s in my code.
+This allows me to use the serial and serial monitor APIï¿½s in my code.
 
 I added junit for testing purposes.
 

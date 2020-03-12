@@ -6,11 +6,10 @@
 package serial;
 
 /**
+ *
  * @author dev
  */
-public class SerialMonitorException extends RuntimeException {
-    public SerialMonitorException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
+public interface SerialPortListener {
+    boolean action(String s);
+    void fail(Exception e);
 }

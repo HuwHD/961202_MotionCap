@@ -3,13 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package serial;
+package robot;
 
 /**
  *
  * @author dev
  */
-public interface SerialPortAction {
-    boolean action(String s);
-    void fail(Exception e);
+public class RobotMouseException extends RuntimeException {
+
+    public RobotMouseException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    
 }

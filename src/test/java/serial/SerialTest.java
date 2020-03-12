@@ -5,17 +5,13 @@
  */
 package serial;
 
-import static org.junit.Assert.*;
-import org.junit.Ignore;
-import org.junit.Test;
-
 /**
  *
  * @author dev
  */
 public class SerialTest {
 
-    private SerialMonitor serialMonitor;
+    private SerialMonitorThread serialMonitorThread;
 
 //    @Test
 //    public void serialTest() throws InterruptedException {

@@ -5,35 +5,32 @@
  */
 package serial;
 
+import purejavacomm.*;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import purejavacomm.CommPortIdentifier;
-import purejavacomm.NoSuchPortException;
-import purejavacomm.PortInUseException;
-import purejavacomm.SerialPort;
-import purejavacomm.UnsupportedCommOperationException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
- *
  * @author dev
  */
-public class SerialMonitor extends Thread {
+public class SerialMonitorThread extends Thread {
 
-    private final SerialPortAction action;
+    private final SerialPortListener action;
 
-    private SerialPort serialPort = null;
-    private InputStream portInStream = null;
+    private final SerialPort serialPort;
+    private final InputStream portInStream;
+    private final String name;
     private boolean canRun = true;
-    private String name;
 
-    public SerialMonitor(String devicePort, int baud, SerialPortAction action, String name) {
+    public SerialMonitorThread(String devicePort, int baud, SerialPortListener action, String name) {
         this.name = name;
         try {
             serialPort = (SerialPort) CommPortIdentifier.getPortIdentifier(devicePort).open("abc", 0);
         } catch (NoSuchPortException ex) {
-            throw new SerialMonitorException("Port not found: port[" + devicePort + "] baud[" + baud + "] name[" + name + "]", ex);
+            throw new SerialMonitorException("Port not found: port[" + devicePort + "] baud[" + baud + "] name[" + name + "]. Available ports are: "+getPortListAsString(), ex);
         } catch (PortInUseException ex) {
             throw new SerialMonitorException("Port is already open: port[" + devicePort + "] baud[" + baud + "] name[" + name + "]", ex);
         }
@@ -60,15 +57,7 @@ public class SerialMonitor extends Thread {
         Ensure the thread exits
          */
         canRun = false;
-        /*
-        If the thread is waiting for a character is will block and never test canRun!
-        
-        If we force the serialPort to close this interupts the wait and the thread exits normally.
-         */
-        if (serialPort != null) {
-            serialPort.close();
-        }
-    }
+     }
 
     @Override
     public void run() {
@@ -111,4 +100,29 @@ public class SerialMonitor extends Thread {
             }
         }
     }
+
+    public static String getPortListAsString() {
+        StringBuilder sb = new StringBuilder();
+        int mark = 0;
+        for (String s : getPortList()) {
+            sb.append(s);
+            mark = sb.length();
+            sb.append(',');
+        }
+        sb.setLength(mark);
+        return sb.toString();
+    }
+
+    public static List<String> getPortList() {
+        List<String> portList = new ArrayList<>();
+        Enumeration e = CommPortIdentifier.getPortIdentifiers();
+        while (e.hasMoreElements()) {
+            CommPortIdentifier portId = (CommPortIdentifier) e.nextElement();
+            if (portId.getPortType() == CommPortIdentifier.PORT_SERIAL) {
+                portList.add(portId.getName());
+            }
+        }
+        return portList;
+    }
+
 }
