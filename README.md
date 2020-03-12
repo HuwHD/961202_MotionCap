@@ -12,7 +12,7 @@ Documentation to be written here...
 * Design and implement a clicking method
 
 
-#Development Notes.
+#Development Notes..
 
 I used a gradle java fx template found here: 
 
