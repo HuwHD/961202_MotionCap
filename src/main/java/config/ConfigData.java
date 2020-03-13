@@ -31,7 +31,7 @@ import java.util.Properties;
  *              <b>os.windows.app.name</b> wins over <b>app.name</b>
  * </pre>
  *
- * @author dev
+ * @author huw
  */
 public class ConfigData {
 

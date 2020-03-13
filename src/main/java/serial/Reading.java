@@ -30,7 +30,6 @@ public class Reading {
     private static final int SERIES_NS = 2;
     private static final int SERIES_WE = 3;
     private static final int SERIES_H = 4;
-    private static final int SERIES_LA = 5;
     private final double x;
     private final double y;
     private final double ns;
@@ -113,6 +112,10 @@ public class Reading {
 
     public boolean isB2() {
         return b2;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 
     private static double parseNum(String value, String data, String name) {

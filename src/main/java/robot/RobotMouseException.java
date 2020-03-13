@@ -17,10 +17,6 @@
  */
 package robot;
 
-/**
- *
- * @author dev
- */
 public class RobotMouseException extends RuntimeException {
 
     public RobotMouseException(String message, Throwable cause) {

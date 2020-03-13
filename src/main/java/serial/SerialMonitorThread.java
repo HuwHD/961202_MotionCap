@@ -24,12 +24,9 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
-/**
- * @author dev
- */
 public class SerialMonitorThread extends Thread {
 
-    private final SerialPortListener action;
+    private final SerialPortListener serialPortListener;
 
     private final SerialPort serialPort;
     private final InputStream portInStream;
@@ -40,10 +37,10 @@ public class SerialMonitorThread extends Thread {
      * Connect to the serial port
      * @param devicePort The name of the port
      * @param baud The speed of the port (baud rate)
-     * @param action A listener for events that can occur
+     * @param serialPortListener A listener for events that can occur
      * @param name The (human readable) name of the port.
      */
-    public SerialMonitorThread(String devicePort, int baud, SerialPortListener action, String name) {
+    public SerialMonitorThread(String devicePort, int baud, SerialPortListener serialPortListener, String name) {
         this.name = name;
         try {
             serialPort = (SerialPort) CommPortIdentifier.getPortIdentifier(devicePort).open("abc", 0);
@@ -63,7 +60,7 @@ public class SerialMonitorThread extends Thread {
         } catch (IOException ex) {
             throw new SerialMonitorException("Failed connect to port[" + devicePort + "] baud[" + baud + "] name[" + name + "]", ex);
         }
-        this.action = action;
+        this.serialPortListener = serialPortListener;
     }
 
     public String getPortName() {
@@ -87,11 +84,11 @@ public class SerialMonitorThread extends Thread {
             int b = portInStream.read();
             while (canRun) {
                 if (b == ':') {
-                    if (action != null) {
+                    if (serialPortListener != null) {
                         /*
                         Beware if you throw an exception in his method the SerialMonitior thread will terminate
                          */
-                        canRun = action.reading(Reading.parse(sb.toString()));
+                        serialPortListener.reading(Reading.parse(sb.toString()));
                     }
                     sb.setLength(0);
                 } else {
@@ -107,8 +104,8 @@ public class SerialMonitorThread extends Thread {
             we notify the action listener. Perhaps it can do somthing!
             This will kill the SerialMonitor!
              */
-            if (action != null) {
-                action.fail(io);
+            if (serialPortListener != null) {
+                serialPortListener.fail(io);
             } else {
                 io.printStackTrace();
             }

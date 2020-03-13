@@ -17,11 +17,7 @@
  */
 package serial;
 
-/**
- *
- * @author dev
- */
 public interface SerialPortListener {
-    boolean reading(Reading s);
+    void reading(Reading s);
     void fail(Exception e);
 }

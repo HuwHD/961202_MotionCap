@@ -15,32 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package data;
+package main;
 
 import serial.Reading;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Readings {
     private final ConcurrentLinkedQueue<Reading> readings;
     private final int capacity;
     private Reading lastReading;
+    private Reading firstReading;
 
     public Readings(int capacity) {
         readings = new ConcurrentLinkedQueue();
         this.capacity = capacity;
     }
 
-    public int add(Reading r, long latency) {
+    public int add(Reading r) {
+        if (firstReading == null) {
+            firstReading = r;
+        }
         lastReading = r;
         readings.add(r);
         if (readings.size() > capacity) {
-            readings.poll();
+            firstReading = readings.poll();
         }
         return readings.size();
+    }
+
+    public long getLatency() {
+        return (lastReading.getTimestamp() - firstReading.getTimestamp()) / readings.size();
     }
 
     public Reading getLastReading() {

@@ -38,11 +38,14 @@ import java.awt.*;
 
 public class Main extends Application {
 
+
     private static Stage mainStage;
     private static Scene mainScene;
     private static FXMLDocumentController controller;
+
     private static SerialMonitorThread serialMonitorThread;
     private static RobotMouseThread robotMouseThread;
+
 
     /**
      * Start the application.
@@ -74,7 +77,7 @@ public class Main extends Application {
         /*
         Use the loader to load the window controls
          */
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/FXMLDocument.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/FXMLMotionCap.fxml"));
         Parent root = loader.load();
         /*
         Save a reference to the controller for later.
@@ -119,12 +122,18 @@ public class Main extends Application {
         if (args.length == 0) {
             exitProgramWithHelp("Requires the name of a configuration data file. For example config.properties", null);
         }
+        /*
+        Load the configuration file.
+         */
         try {
             ConfigData.load(args[0]);
         } catch (ConfigException ce) {
             exitProgramWithHelp("Configuration data '" + args[0] + "' could not be loaded", ce);
         }
 
+        /*
+        Start the robot mouse thread and ad a listener for any events
+         */
         robotMouseThread = new RobotMouseThread(new RobotMouseEventListener() {
             @Override
             public void mouseNotInPosition(Point expected, Point actual) {
@@ -132,27 +141,20 @@ public class Main extends Application {
             }
         }, getScreenRectangle(), 0);
 
+        /*
+        Start the serial port reader thread and add a listener for any events
+         */
         try {
             serialMonitorThread = new SerialMonitorThread(ConfigData.getDefaultPort(), ConfigData.getDefaultBaud(), new SerialPortListener() {
                 @Override
-                public boolean reading(Reading s) {
+                public void reading(Reading s) {
                     /*
-                    The action MUST be in a JavaFX Thread so we must use runLater.
+                    The reading is passed to thw controller if one exists.
                      */
-                    Platform.runLater(new Runnable() {
-                        @Override
-                        public void run() {
-                        /*
-                        Set the label on the controller via the action method
-                         */
-                            if (controller != null) {
-                                controller.action("Received:" + s.toString());
-                            }
-                        }
-                    });
-                    return true;
-                }
-
+                    if (controller != null) {
+                        controller.reading(s);
+                    }
+                 }
                 @Override
                 public void fail(Exception s) {
                     exitProgramWithHelp("Serial port monitor failed. Program cannot continue.", s);
@@ -178,10 +180,7 @@ public class Main extends Application {
     }
 
     /**
-     * This method returns the rectangle that is the effective application
-     * window (inside the borders)
-     * <p>
-     * The values are screen coordinates not application coordinates
+     * This method returns the rectangle that is the effective screen size.
      *
      * @return a rectangle
      */
@@ -190,4 +189,17 @@ public class Main extends Application {
         return new Rectangle(0,  0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
     }
 
+    /*
+    Here so that the controller can get details of the Stage
+     */
+    public static Stage getMainStage() {
+        return mainStage;
+    }
+
+    /*
+   Here so that the controller can get details of the Scene
+    */
+    public static Scene getMainScene() {
+        return mainScene;
+    }
 }

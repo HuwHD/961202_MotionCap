@@ -19,7 +19,7 @@ package config;
 
 /**
  *
- * @author dev
+ * @author huw
  */
 public class ConfigException extends RuntimeException {
 
