@@ -31,7 +31,7 @@ I searched the internet for the best API for reading and writing to a serial por
 
 This allows me to use the serial and serial monitor API�s in my code.
 
-I added junit for testing purposes..
+I added junit for testing purposes.
 
 * I created a jar task, which builds an executable jar. This jar contains everything that my application will need in order to run, within a single file. 
 
