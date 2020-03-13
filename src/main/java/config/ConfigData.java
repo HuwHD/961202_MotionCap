@@ -35,6 +35,9 @@ import java.util.Properties;
  */
 public class ConfigData {
 
+    /*
+    Define a set of standard properties for this application
+     */
     private static final String SETTINGS_FILE_KEY = "settings.file";
     private static final String DEFAULT_PORT_KEY = "default.port";
     private static final String DEFAULT_BAUD = "default.baud";
@@ -49,15 +52,21 @@ public class ConfigData {
     private static String fileName;
     /*
     A properties object is a simple Name value pair construct.
+    These are the main properties.
      */
     private static Properties properties;
     /*
-    A properties object to contain the settings. These override the properties.
+    A properties object to contain the settings from the setting file defined is the "settings.file' property of the main file.
+    If "settings.file' is undefined then no save takes place.
+    These "settings.file' override the main properties.
      */
     private static Properties settings;
 
     /**
      * Get a MANDATORY list value from the configuration data
+     * List is formatted as a '|' separated list.
+     * A|B|c etc.
+     * Any leading or trailing spaces are retained.
      * <pre>
      * Names prefixed with <b>'os.[osname].'</b> take precedence.
      * For example: <b>os.linux.app.name</b> wins over <b>app.name</b>
@@ -75,26 +84,7 @@ public class ConfigData {
         return array;
     }
 
-    /**
-     * Get a MANDATORY value from the configuration data
-     * <pre>
-     * Names prefixed with <b>'os.[osname].'</b> take precedence.
-     * For example: <b>os.linux.app.name</b> wins over <b>app.name</b>
-     *              <b>os.windows.app.name</b> wins over <b>app.name</b>
-     * </pre>
-     *
-     * @param name The name of the value
-     * @return The value
-     */
-    public static String getValue(String name) {
-        String s = getValue(name, null);
-        if (s == null) {
-            throw new ConfigException("Config data [" + fileName + "] property [" + name + "] or [os." + OSNAME + "." + name + "] is undefined");
-        }
-        return s;
-    }
-
-    /**
+   /**
      * Add a value to the settings and update the settings file.
      *
      * The settings file name must be defined in the configuration data using
@@ -191,7 +181,26 @@ public class ConfigData {
     }
 
     /**
-     * Get an integer property of a default value if not found.
+     * Get a MANDATORY value from the configuration data
+     * <pre>
+     * Names prefixed with <b>'os.[osname].'</b> take precedence.
+     * For example: <b>os.linux.app.name</b> wins over <b>app.name</b>
+     *              <b>os.windows.app.name</b> wins over <b>app.name</b>
+     * </pre>
+     *
+     * @param name The name of the value
+     * @return The value
+     */
+    public static String getValue(String name) {
+        String s = getValue(name, null);
+        if (s == null) {
+            throw new ConfigException("Config data [" + fileName + "] property [" + name + "] or [os." + OSNAME + "." + name + "] is undefined");
+        }
+        return s;
+    }
+
+    /**
+     * Get an optional integer property or a default value if not found.
      * <pre>
      * If found it will convert to an integer.
      * If the conversion fails an exception is thrown.
@@ -210,6 +219,16 @@ public class ConfigData {
         }
     }
 
+    /**
+     * Get a mandatory integer property.
+     * <pre>
+     * If found it will convert to an integer.
+     * If the conversion fails an exception is thrown.
+     * </pre>
+     *
+     * @param name The property name
+     * @return The int value
+     */
     public static int getInt(String name) {
         String s = getValue(name);
         try {
@@ -294,22 +313,37 @@ public class ConfigData {
     }
 
     /**
-     * Easy method to set the default port. Called when the port is selected.
+     * Short cut method to set the default port.
      *
      * @param port the selected port
      */
     public static void setDefaultPort(String port) {
         set(DEFAULT_PORT_KEY, port);
     }
-    
+
+    /**
+     * Short cut method to get the click delay value for the mouse
+     *
+      * @return the integer value in Milli Seconds
+     */
     public static int getClickDelay() {
         return getInt(CLICK_DELAY_KEY, 10);
     }
-    
+
+    /**
+     * Short cut method to get the type delay value for the mouse
+     *
+     * @return the integer value in Milli Seconds
+     */
     public static int getTypeDelay() {
         return getInt(TYPE_DELAY_KEY, 10);
     }
 
+    /**
+     * Short cut method to get the move delay value for the mouse
+     *
+     * @return the integer value in Milli Seconds
+     */
     public static int getMoveDelay() {
         return getInt(MOVE_DELAY_KEY, 1);
     }

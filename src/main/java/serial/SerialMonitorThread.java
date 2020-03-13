@@ -1,7 +1,19 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (C) 2019 Huw Hudson-Davies
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 package serial;
 
@@ -25,6 +37,13 @@ public class SerialMonitorThread extends Thread {
     private final String name;
     private boolean canRun = true;
 
+    /**
+     * Connect to the serial port
+     * @param devicePort The name of the port
+     * @param baud The speed of the port (baud rate)
+     * @param action A listener for events that can occur
+     * @param name The (human readable) name of the port.
+     */
     public SerialMonitorThread(String devicePort, int baud, SerialPortListener action, String name) {
         this.name = name;
         try {
@@ -52,6 +71,9 @@ public class SerialMonitorThread extends Thread {
         return name;
     }
 
+    /**
+     * Stop the thread running
+     */
     public void close() {
         /*
         Ensure the thread exits
@@ -101,6 +123,10 @@ public class SerialMonitorThread extends Thread {
         }
     }
 
+    /**
+     * Return the list of available ports as a String so we can tell the user what is valid.
+     * @return A CSV list of available ports
+     */
     public static String getPortListAsString() {
         StringBuilder sb = new StringBuilder();
         int mark = 0;
@@ -113,6 +139,10 @@ public class SerialMonitorThread extends Thread {
         return sb.toString();
     }
 
+    /**
+     * Use purejavacomm to Find a list of all available ports;
+     * @return A list of ports
+     */
     public static List<String> getPortList() {
         List<String> portList = new ArrayList<>();
         Enumeration e = CommPortIdentifier.getPortIdentifiers();

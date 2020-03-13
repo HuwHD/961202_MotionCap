@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package config;
 
 /**
@@ -28,7 +27,6 @@ public class ConfigException extends RuntimeException {
         super(message);
     }
 
-    
     public ConfigException(String message, Throwable cause) {
         super(message, cause);
     }
