@@ -29,6 +29,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import robot.RobotMouseEventListener;
 import robot.RobotMouseThread;
+import serial.Reading;
 import serial.SerialMonitorException;
 import serial.SerialMonitorThread;
 import serial.SerialPortListener;
@@ -127,14 +128,14 @@ public class Main extends Application {
         robotMouseThread = new RobotMouseThread(new RobotMouseEventListener() {
             @Override
             public void mouseNotInPosition(Point expected, Point actual) {
-                robotMouseThread.stopMouse();
+                System.out.println("Mouse out of position");
             }
         }, getScreenRectangle(), 0);
 
         try {
             serialMonitorThread = new SerialMonitorThread(ConfigData.getDefaultPort(), ConfigData.getDefaultBaud(), new SerialPortListener() {
                 @Override
-                public boolean action(String s) {
+                public boolean reading(Reading s) {
                     /*
                     The action MUST be in a JavaFX Thread so we must use runLater.
                      */
@@ -145,7 +146,7 @@ public class Main extends Application {
                         Set the label on the controller via the action method
                          */
                             if (controller != null) {
-                                controller.action("Received:" + s);
+                                controller.action("Received:" + s.toString());
                             }
                         }
                     });

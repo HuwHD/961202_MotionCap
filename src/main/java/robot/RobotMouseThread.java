@@ -63,15 +63,9 @@ public class RobotMouseThread extends Thread {
 
     public final void stopMouse() {
         setSpeed(0.0, 0.0);
-        updateMousePos();
-    }
-
-    private void updateMousePos() {
-        moveMouseAbs(MouseInfo.getPointerInfo().getLocation());
-    }
-
-    protected final void moveMouseAbs(Point point) {
-        moveMouseAbs(point.x, point.y);
+        Point p = MouseInfo.getPointerInfo().getLocation();
+        mouseX = p.x;
+        mouseY = p.y;
     }
 
     protected final void moveMouseAbs(double x, double y) {
@@ -84,6 +78,13 @@ public class RobotMouseThread extends Thread {
             y = screenBounds.getMinX();
         } else if (y > screenBounds.getMaxY()) {
             y = screenBounds.getMaxY();
+        }
+        Point p = MouseInfo.getPointerInfo().getLocation();
+
+        if ((p.getX() != x) || (p.getY() != y)) {
+            if (listener != null) {
+                listener.mouseNotInPosition(new Point((int) x, (int) y), p);
+            }
         }
         mouseX = x;
         mouseY = y;
@@ -180,7 +181,9 @@ public class RobotMouseThread extends Thread {
             } else {
                 lastTimeMoved = System.currentTimeMillis();
             }
-            robot.delay(50);
+            if (canRun) {
+                robot.delay(50);
+            }
         }
     }
 

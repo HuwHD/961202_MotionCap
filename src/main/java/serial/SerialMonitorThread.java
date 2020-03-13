@@ -18,7 +18,6 @@
 package serial;
 
 import purejavacomm.*;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -92,7 +91,7 @@ public class SerialMonitorThread extends Thread {
                         /*
                         Beware if you throw an exception in his method the SerialMonitior thread will terminate
                          */
-                        canRun = action.action(sb.toString());
+                        canRun = action.reading(Reading.parse(sb.toString()));
                     }
                     sb.setLength(0);
                 } else {

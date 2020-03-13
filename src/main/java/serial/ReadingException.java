@@ -18,10 +18,12 @@
 package serial;
 
 /**
- *
- * @author dev
+ * Data error occurred.
  */
-public interface SerialPortListener {
-    boolean reading(Reading s);
-    void fail(Exception e);
+public class ReadingException extends RuntimeException {
+
+    public ReadingException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    
 }
