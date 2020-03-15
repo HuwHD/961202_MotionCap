@@ -19,6 +19,9 @@ package main;
 
 import config.ConfigData;
 import config.ConfigException;
+import java.awt.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -27,6 +30,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import mouse.MouseController;
 import robot.RobotMouseEventListener;
 import robot.RobotMouseThread;
 import serial.Reading;
@@ -34,18 +38,15 @@ import serial.SerialMonitorException;
 import serial.SerialMonitorThread;
 import serial.SerialPortListener;
 
-import java.awt.*;
-
 public class Main extends Application {
-
 
     private static Stage mainStage;
     private static Scene mainScene;
-    private static FXMLDocumentController controller;
+    private static SerialPortListener guiController;
+    private static SerialPortListener mouseController;
 
     private static SerialMonitorThread serialMonitorThread;
     private static RobotMouseThread robotMouseThread;
-
 
     /**
      * Start the application.
@@ -83,7 +84,7 @@ public class Main extends Application {
         Save a reference to the controller for later.
         This is so the serial monitor can pass action messages to it.
          */
-        controller = loader.getController();
+        guiController = loader.getController();
         /*
         Save a reference to the scene for later.
          */
@@ -116,6 +117,72 @@ public class Main extends Application {
     }
 
     /**
+     * Connect to the sensor.
+     *
+     * If configuration data ConfigData.CONNECT_ON_LOAD is true then this is
+     * called by the Main class. If configuration data
+     * ConfigData.CONNECT_ON_LOAD is false then this is called by the GUI
+     * Controller class when the connect button is pressed.
+     *
+     * It forwards messages to the GUI controller if it has been set up. It
+     * forwards messages to the Mouse controller if it has been set up.
+     */
+    public static void connectToSensor() {
+        /*
+        Start the serial port reader thread and add a listener for any events
+         */
+        try {
+            serialMonitorThread = new SerialMonitorThread(ConfigData.getDefaultPort(), ConfigData.getDefaultBaud(), new SerialPortListener() {
+                @Override
+                public void reading(Reading reading) {
+                    if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
+                        System.out.println(reading);
+                    }
+                    /*
+                    The reading is passed to thw controller if one exists.
+                     */
+                    if (guiController != null) {
+                        guiController.reading(reading);
+                    }
+                    if (mouseController != null) {
+                        mouseController.reading(reading);
+                    }
+                    if (reading.isB1()) {
+                        if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
+                            System.out.println("Button B1(A) was pressed");
+                        }
+                        serialMonitorThread.close();
+                    }
+                }
+
+                @Override
+                public void fail(Exception s) {
+                    exitProgramWithHelp("Serial port monitor failed. Program cannot continue.", s);
+                }
+
+                @Override
+                public void connected(String devicePort, int baud, String name) {
+                    if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
+                        System.out.println("Connected to port:" + devicePort);
+                    }
+                    if (guiController != null) {
+                        guiController.connected(devicePort, baud, name);
+                    }
+                    if (mouseController != null) {
+                        mouseController.connected(devicePort, baud, name);
+                    }
+                }
+
+            }, "Sensor Port");
+        } catch (SerialMonitorException sme) {
+            exitProgramWithHelp("Serial port monitor could not be started.", sme);
+        }
+        if (serialMonitorThread != null) {
+            serialMonitorThread.start();
+        }
+    }
+
+    /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
@@ -131,6 +198,9 @@ public class Main extends Application {
             exitProgramWithHelp("Configuration data '" + args[0] + "' could not be loaded", ce);
         }
 
+        if (ConfigData.getBoolean(ConfigData.CONNECT_ON_LOAD, true)) {
+            connectToSensor();
+        }
         /*
         Start the robot mouse thread and ad a listener for any events
          */
@@ -141,32 +211,40 @@ public class Main extends Application {
             }
         }, getScreenRectangle(), 0);
 
-        /*
-        Start the serial port reader thread and add a listener for any events
-         */
-        try {
-            serialMonitorThread = new SerialMonitorThread(ConfigData.getDefaultPort(), ConfigData.getDefaultBaud(), new SerialPortListener() {
-                @Override
-                public void reading(Reading s) {
-                    /*
-                    The reading is passed to thw controller if one exists.
-                     */
-                    if (controller != null) {
-                        controller.reading(s);
-                    }
-                 }
-                @Override
-                public void fail(Exception s) {
-                    exitProgramWithHelp("Serial port monitor failed. Program cannot continue.", s);
-                }
-            }, "Sensor Port");
-        } catch (SerialMonitorException sme) {
-            exitProgramWithHelp("Serial port monitor could not be started.", sme);
-        }
-
         robotMouseThread.start();
-        serialMonitorThread.start();
-        launch(args);
+
+        /*
+        Create the mouse controller.. This receives messages from the Sensor 
+        an decides what to do with the mouse via the robotMouseThread
+         */
+        mouseController = new MouseController(robotMouseThread);
+
+        if (ConfigData.getBoolean(ConfigData.LAUNCH_GUI, true)) {
+            launch(args);
+        } else {
+            if (serialMonitorThread == null) {
+                exitProgramWithHelp("If you dont load the GUI (" + ConfigData.LAUNCH_GUI + "=false) you MUST start the SerialMonitor on Load (" + ConfigData.CONNECT_ON_LOAD + "=true)", null);
+            }
+            /*
+            Not running with the GUI so wait for the sensor thread to stop. 
+             */
+            System.out.println("Waiting for Sensor monitor to terminate");
+            /*
+            Keep checking the sensor thread. Sleep releases the thread so other 
+            processes can continue.
+             */
+            while (serialMonitorThread.isRunning()) {
+                try {
+                    Thread.sleep(1000); // Sleep for 1 second
+                } catch (InterruptedException ex) {
+                    // Do Nothing. Just keep waiting.
+                }
+            }
+            /*
+            Close the application properly!
+             */
+            closeApplication(0);
+        }
     }
 
     private static void exitProgramWithHelp(String message, Throwable ex) {
@@ -186,7 +264,7 @@ public class Main extends Application {
      */
     public static Rectangle getScreenRectangle() {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        return new Rectangle(0,  0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
+        return new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
     }
 
     /*
@@ -198,7 +276,7 @@ public class Main extends Application {
 
     /*
    Here so that the controller can get details of the Scene
-    */
+     */
     public static Scene getMainScene() {
         return mainScene;
     }

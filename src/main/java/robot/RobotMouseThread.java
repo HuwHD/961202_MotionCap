@@ -68,7 +68,7 @@ public class RobotMouseThread extends Thread {
         mouseY = p.y;
     }
 
-    protected final void moveMouseAbs(double x, double y) {
+    public final void moveMouseAbs(double x, double y) {
         if (x < screenBounds.getMinX()) {
             x = screenBounds.getMinX();
         } else if (x > screenBounds.getMaxX()) {
@@ -91,7 +91,7 @@ public class RobotMouseThread extends Thread {
         robot.mouseMove((int) x, (int) y);
     }
 
-    protected final void moveMouseRel(double dx, double dy) {
+    public final void moveMouseRel(double dx, double dy) {
         moveMouseAbs(mouseX + dx, mouseY + dy);
     }
 
@@ -99,17 +99,17 @@ public class RobotMouseThread extends Thread {
         robot.delay(ms);
     }
 
-    protected void setSpeed(double x, double y) {
+    public void setSpeed(double x, double y) {
         this.hasSpeed = ((Math.abs(x) > 0.0001) || (Math.abs(y) > 0.0001));
         this.speedX = x;
         this.speedY = y;
     }
 
-    protected double getSpeedY() {
+    public double getSpeedY() {
         return speedY;
     }
 
-    protected double getSpeedX() {
+    public double getSpeedX() {
         return speedX;
     }
 
@@ -186,5 +186,4 @@ public class RobotMouseThread extends Thread {
             }
         }
     }
-
 }

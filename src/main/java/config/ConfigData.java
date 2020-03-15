@@ -37,13 +37,19 @@ public class ConfigData {
 
     /*
     Define a set of standard properties for this application
+    
+    These are public so any class can get the property names.
      */
-    private static final String SETTINGS_FILE_KEY = "settings.file";
-    private static final String DEFAULT_PORT_KEY = "default.port";
-    private static final String DEFAULT_BAUD = "default.baud";
-    private static final String CLICK_DELAY_KEY = "delay.ms.click";
-    private static final String TYPE_DELAY_KEY = "delay.ms.type";
-    private static final String MOVE_DELAY_KEY = "delay.ms.move";
+    public static final String SETTINGS_FILE_KEY = "settings.file";
+    public static final String DEFAULT_PORT_KEY = "default.port";
+    public static final String DEFAULT_BAUD = "default.baud";
+    public static final String CLICK_DELAY_KEY = "delay.ms.click";
+    public static final String TYPE_DELAY_KEY = "delay.ms.type";
+    public static final String MOVE_DELAY_KEY = "delay.ms.move";
+    public static final String CONNECT_ON_LOAD = "connectOnLoad";
+    public static final String LAUNCH_GUI = "launchGUI";
+    public static final String SENSOR_TO_CONSOLE = "sendSensorReadingsToConsole";
+    
 
     private static final String OSNAME = getOsNameFromEnvironment();
     /*
@@ -238,6 +244,24 @@ public class ConfigData {
         }
     }
 
+    /**
+     * Get a boolean value. If not defined then return defaultValue.
+     * @param name The name of the property
+     * @param defaultValue If not defined then return this.
+     * @return The property value as a boolean.
+     */
+    public static boolean getBoolean(String name, boolean defaultValue) {
+        return getValue(name, Boolean.toString(defaultValue)).toLowerCase().startsWith("true");
+    }
+    
+    /**
+     * Get a boolean value. If not defined then getValue(name) will throw an exception.
+     * @param name The name of the property
+     * @return The property value as a boolean. Throws exception if undefined. 
+     */
+    public static boolean getBoolean(String name) {
+        return getValue(name).toLowerCase().startsWith("true");
+    }
     /**
      * Load the configuration data.This should only be done ONCE!
      *

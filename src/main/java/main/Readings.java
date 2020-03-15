@@ -17,9 +17,8 @@
  */
 package main;
 
-import serial.Reading;
-
 import java.util.concurrent.ConcurrentLinkedQueue;
+import serial.Reading;
 
 public class Readings {
     private final ConcurrentLinkedQueue<Reading> readings;

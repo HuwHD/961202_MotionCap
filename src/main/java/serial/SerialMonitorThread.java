@@ -17,12 +17,12 @@
  */
 package serial;
 
-import purejavacomm.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import purejavacomm.*;
 
 public class SerialMonitorThread extends Thread {
 
@@ -32,6 +32,7 @@ public class SerialMonitorThread extends Thread {
     private final InputStream portInStream;
     private final String name;
     private boolean canRun = true;
+    private boolean running = false;
 
     /**
      * Connect to the serial port
@@ -61,6 +62,9 @@ public class SerialMonitorThread extends Thread {
             throw new SerialMonitorException("Failed connect to port[" + devicePort + "] baud[" + baud + "] name[" + name + "]", ex);
         }
         this.serialPortListener = serialPortListener;
+        if (serialPortListener!=null) {
+            serialPortListener.connected(devicePort, baud, name);
+        }
     }
 
     public String getPortName() {
@@ -79,6 +83,7 @@ public class SerialMonitorThread extends Thread {
 
     @Override
     public void run() {
+        running = true;
         StringBuilder sb = new StringBuilder();
         try {
             int b = portInStream.read();
@@ -116,6 +121,7 @@ public class SerialMonitorThread extends Thread {
             if (serialPort != null) {
                 serialPort.close();
             }
+            running = false;
         }
     }
 
@@ -149,6 +155,10 @@ public class SerialMonitorThread extends Thread {
             }
         }
         return portList;
+    }
+
+    public boolean isRunning() {
+        return running;
     }
 
 }

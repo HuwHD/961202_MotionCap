@@ -121,30 +121,28 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
              */
             canvasGraphics = mainCanvas.getGraphicsContext2D();
             try {
-                     /*
-                    Given the size of the canvas. Calculate each X step and the origin line. Also the tick height.
-                     */
+                /*
+               Given the size of the canvas. Calculate each X step and the origin line. Also the tick height.
+                */
                 double xStep = canvasWidth / (readings.capacity() - 1);
-                double yOrg = canvasHeight / 2;
-                double xOrg = canvasWidth / 2;
-                int dataOffset = (int) Math.round((canvasWidth / 4) * 3);
                 double tickHeight = canvasHeight / 50;
-
-                    /*
-                    Init the canvas with a background colour and fill it!
-                     */
+                double yOrg = canvasHeight / 2; // Center of the canvas
+                double xOrg = canvasWidth / 2;  // Center of the canvas
+                /*
+                Init the canvas with a background colour and fill it!
+                 */
                 canvasGraphics.setFill(Color.AQUA);
                 canvasGraphics.fillRect(0, 0, canvasWidth, canvasHeight);
-                    /*
-                    Set the line width to 1. Draw a bounding box and origin line in black
-                     */
+                /*
+                Set the line width to 1. Draw a bounding box and origin line in black
+                 */
                 canvasGraphics.setLineWidth(1);
                 canvasGraphics.setStroke(Color.BLACK);
                 canvasGraphics.strokeRect(0, 0, canvasWidth, canvasHeight);
                 canvasGraphics.strokeLine(0, yOrg, canvasWidth, yOrg);
-                    /*
-                    Draw the ticks. Each 10th goes below the line
-                     */
+                /*
+                Draw the ticks. Each 10th goes below the line
+                 */
                 for (int t = 0; t < readings.capacity(); t++) {
                     if ((t % 10) == 0) {
                         canvasGraphics.strokeLine(t * xStep, yOrg - tickHeight, t * xStep, yOrg + tickHeight);
@@ -176,7 +174,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                     /*
                     If there are ANY values in the readings
                      */
-//                if (readingData.size() > 0) {
+                if (readings.size() > 0) {
 //                        /*
 //                        For each line.
 //                         */
@@ -222,13 +220,14 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
 //                        double compass = xOrg + currentLeftRightReading;
 //                        connectionCanvasGraphics.strokeLine(compass, 0, compass, connectionCanvasHeight);
 //                    }
-//                }
+                }
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
 
     };
+    
     /**
      * The canvas (graph plot) is contained inside connectionsAnchorPane.
      * statusAnchorPane has a height and a width property that can be
@@ -276,6 +275,12 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                 ex.printStackTrace();
             }
         });
+    }
+
+    @Override
+    public void connected(String devicePort, int baud, String name) {
+        System.out.println("************");
+        status2.setText("Connected: Port "+devicePort);
     }
 
 }

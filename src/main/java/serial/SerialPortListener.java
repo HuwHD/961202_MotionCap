@@ -20,4 +20,6 @@ package serial;
 public interface SerialPortListener {
     void reading(Reading s);
     void fail(Exception e);
+
+    void connected(String devicePort, int baud, String name);
 }
