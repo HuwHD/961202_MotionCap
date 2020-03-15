@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Stuart Davies
+ * Copyright (C) 2019 Huw Hudson-Davies
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,11 +21,7 @@ import robot.RobotMouseThread;
 import serial.Reading;
 import serial.SerialPortListener;
 
-/**
- *
- * @author Stuart
- */
-public class MouseController implements SerialPortListener{
+public class MouseController implements SerialPortListener {
     private final RobotMouseThread robotMouseThread;
     
     public MouseController(RobotMouseThread robotMouseThread) {

@@ -209,7 +209,7 @@ public class Main extends Application {
             public void mouseNotInPosition(Point expected, Point actual) {
                 System.out.println("Mouse out of position");
             }
-        }, getScreenRectangle(), 0);
+        }, getScreenRectangle());
 
         robotMouseThread.start();
 

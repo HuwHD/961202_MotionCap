@@ -24,7 +24,6 @@ import java.text.DecimalFormat;
  */
 public class Reading {
 
-    private static final double TOO_DEGREES = (180 / Math.PI);
     private static final int SERIES_X = 0;
     private static final int SERIES_Y = 1;
     private static final int SERIES_NS = 2;
@@ -57,7 +56,7 @@ public class Reading {
             double h = parseNum(values[SERIES_H], "H", data);
             boolean b1 = parseBool(values[5]);
             boolean b2 = parseBool(values[6]);
-            return new Reading(null, x, y, ns, we, h, b1, b2);
+            return new Reading(x, y, ns, we, h, b1, b2);
         } catch (ReadingException ex) {
             System.err.println("Invalid sensor data [" + data + "] " + ex.getMessage());
             return null;
@@ -75,7 +74,7 @@ public class Reading {
         return df.format(d);
     }
 
-    private Reading(String status, double x, double y, double ns, double we, double heading, boolean b1, boolean b2) {
+    private Reading(double x, double y, double ns, double we, double heading, boolean b1, boolean b2) {
         this.x = x;
         this.y = y;
         this.ns = ns;

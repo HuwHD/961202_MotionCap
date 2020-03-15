@@ -40,8 +40,9 @@ public class SerialMonitorThread extends Thread {
      * @param baud The speed of the port (baud rate)
      * @param serialPortListener A listener for events that can occur
      * @param name The (human readable) name of the port.
+     * @throws serial.SerialMonitorException when connection fails.
      */
-    public SerialMonitorThread(String devicePort, int baud, SerialPortListener serialPortListener, String name) {
+    public SerialMonitorThread(String devicePort, int baud, SerialPortListener serialPortListener, String name) throws SerialMonitorException {
         this.name = name;
         try {
             serialPort = (SerialPort) CommPortIdentifier.getPortIdentifier(devicePort).open("abc", 0);
@@ -127,6 +128,9 @@ public class SerialMonitorThread extends Thread {
 
     /**
      * Return the list of available ports as a String so we can tell the user what is valid.
+     * 
+     * Mark is used to remove the last comma.
+     * 
      * @return A CSV list of available ports
      */
     public static String getPortListAsString() {

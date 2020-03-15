@@ -27,7 +27,6 @@ public class RobotMouseThread extends Thread {
 
     private final Robot robot;
     private final RobotMouseEventListener listener;
-    private final int moveDelay;
     private boolean canRun = true;
     /*
     Doubles used to keep track of mouse position.
@@ -47,7 +46,7 @@ public class RobotMouseThread extends Thread {
      * @param screenBounds The limits we can move the mouse
      * @param moveDelay    To slow things down if required.
      */
-    public RobotMouseThread(RobotMouseEventListener listener, Rectangle screenBounds, int moveDelay) {
+    public RobotMouseThread(RobotMouseEventListener listener, Rectangle screenBounds) {
         try {
             this.robot = new Robot();
             this.robot.setAutoDelay(0);
@@ -57,7 +56,6 @@ public class RobotMouseThread extends Thread {
         }
         this.listener = listener;
         this.screenBounds = screenBounds;
-        this.moveDelay = moveDelay;
         this.stopMouse();
     }
 
