@@ -18,6 +18,7 @@
 package main;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -47,7 +48,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     private double canvasHeight;
     /*
     A list (queue) of the last N readings. This is so we can plot the reading on the canvas
-    */
+     */
     private static Readings readings = new Readings(50);
 
     @FXML
@@ -111,8 +112,6 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         displayTimer.scheduleAtFixedRate(displayTimerTask, 1, 200);
     }
 
-
-
     TimerTask displayTimerTask = new TimerTask() {
         @Override
         public void run() {
@@ -123,7 +122,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
             try {
                 /*
                Given the size of the canvas. Calculate each X step and the origin line. Also the tick height.
-                */
+                 */
                 double xStep = canvasWidth / (readings.capacity() - 1);
                 double tickHeight = canvasHeight / 50;
                 double yOrg = canvasHeight / 2; // Center of the canvas
@@ -151,9 +150,9 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                     }
                 }
 
-                    /*
+                /*
                     Draw the fences.
-                     */
+                 */
 //                if (mouseController != null) {
 //                    connectionCanvasGraphics.setStroke(Color.PINK);
 //                    Fences lrf = mouseController.getLeftRightFences();
@@ -171,10 +170,19 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
 //                    }
 //                }
 
-                    /*
+                /*
                     If there are ANY values in the readings
-                     */
+                 */
+                double scaleY = canvasHeight / 5000;
                 if (readings.size() > 0) {
+                    List<Reading> list = readings.readings();
+                    double xPos = 0;
+                    double yPos = yOrg;
+                    for (Reading reading : list) {
+                        canvasGraphics.strokeLine(xPos, yPos, xPos + xStep, yPos + (reading.getX()*scaleY));
+                        xPos = xPos + xStep;
+                        yPos = yPos + (reading.getX()*scaleY);
+                    }
 //                        /*
 //                        For each line.
 //                         */
@@ -227,23 +235,23 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         }
 
     };
-    
+
     /**
      * The canvas (graph plot) is contained inside connectionsAnchorPane.
-     * statusAnchorPane has a height and a width property that can be
-     * listened to. This method sets up the listeners.
-     * 
-     * Not the canvas sits inside an Anchor Pane but this would only
-     * respond to increases in size. Shrinking the window was ignored.
-     * 
-     * Using statusAnchorPane worked but included the button bar (buttonFlowPane) 
-     * and Status panel (statusAnchorPane) so these sizes are used to calculate 
-     * the canvas size
+     * statusAnchorPane has a height and a width property that can be listened
+     * to. This method sets up the listeners.
+     *
+     * Not the canvas sits inside an Anchor Pane but this would only respond to
+     * increases in size. Shrinking the window was ignored.
+     *
+     * Using statusAnchorPane worked but included the button bar
+     * (buttonFlowPane) and Status panel (statusAnchorPane) so these sizes are
+     * used to calculate the canvas size
      */
     private void initTheCanvas() {
         /*
         Get statusAnchorPane and buttonFlowPane heights
-        */
+         */
         double hightAdjust = statusAnchorPane.getPrefHeight() + buttonFlowPane.getPrefHeight();
         /*
         Add a listener to the Width property that sets the canvas to the same width
@@ -251,7 +259,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         mainBorderPane.widthProperty().addListener((obs, oldVal, newVal) -> {
             /*
             Width has changed. Update the canvas width!
-            */
+             */
             try {
                 canvasWidth = mainBorderPane.getWidth();
                 mainCanvas.setWidth(canvasWidth);
@@ -266,7 +274,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         mainBorderPane.heightProperty().addListener((obs, oldVal, newVal) -> {
             /*
             Height has changed. Update the canvas height!
-            */
+             */
             try {
                 canvasHeight = mainBorderPane.getHeight() - hightAdjust;
                 mainCanvas.setHeight(canvasHeight);
@@ -280,7 +288,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     @Override
     public void connected(String devicePort, int baud, String name) {
         System.out.println("************");
-        status2.setText("Connected: Port "+devicePort);
+        status2.setText("Connected: Port " + devicePort);
     }
 
 }

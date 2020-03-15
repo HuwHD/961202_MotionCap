@@ -17,6 +17,9 @@
  */
 package main;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import serial.Reading;
 
@@ -30,7 +33,16 @@ public class Readings {
         readings = new ConcurrentLinkedQueue();
         this.capacity = capacity;
     }
-
+    
+    public List<Reading> readings() {
+        List<Reading> l = new ArrayList<>();
+        Iterator<Reading> ite = readings.iterator();
+        while (ite.hasNext()) {
+            l.add(ite.next());
+        }
+        return l;
+    }
+    
     public int add(Reading r) {
         if (firstReading == null) {
             firstReading = r;

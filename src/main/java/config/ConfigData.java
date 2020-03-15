@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -51,6 +53,8 @@ public class ConfigData {
     public static final String SENSOR_TO_CONSOLE = "sendSensorReadingsToConsole";
     
 
+    Map<String, String> sm = new HashMap<>();
+    
     private static final String OSNAME = getOsNameFromEnvironment();
     /*
     The file name so we can display error messages
