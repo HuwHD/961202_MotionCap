@@ -17,6 +17,10 @@
  */
 package main;
 
+import java.net.URL;
+import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -31,11 +35,6 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.paint.Color;
 import serial.Reading;
 import serial.SerialPortListener;
-
-import java.net.URL;
-import java.util.ResourceBundle;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * @author huw
@@ -112,45 +111,6 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         displayTimer.scheduleAtFixedRate(displayTimerTask, 1, 200);
     }
 
-    /**
-     * The canvas (graph plot) is contained inside connectionsAnchorPane.
-     * connectionsAnchorPane has a height and a width property that can cbe
-     * listened to. When it changes we can call a method
-     */
-    private void initTheCanvas() {
-        double hi = statusAnchorPane.getPrefHeight() + buttonFlowPane.getPrefHeight();
-        /*
-        Add a listener to the Width property that sets the canvas to the same width
-         */
-        mainBorderPane.widthProperty().addListener((obs, oldVal, newVal) -> {
-            /*
-            Width has changed. Update the canvas width!
-            */
-            try {
-                canvasWidth = mainBorderPane.getWidth();
-                mainCanvas.setWidth(canvasWidth);
-                canvasGraphics = mainCanvas.getGraphicsContext2D();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
-        /*
-        Add a listener to the height property that sets the canvas to the same height
-         */
-        mainBorderPane.heightProperty().addListener((obs, oldVal, newVal) -> {
-            /*
-            Height has changed. Update the canvas height!
-            Note canvas starts 50 pixels from the top of the connectionsAnchorPane
-            */
-            try {
-                canvasHeight = mainBorderPane.getHeight() - hi;
-                mainCanvas.setHeight(canvasHeight);
-                canvasGraphics = mainCanvas.getGraphicsContext2D();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
-    }
 
 
     TimerTask displayTimerTask = new TimerTask() {
@@ -269,5 +229,53 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         }
 
     };
+    /**
+     * The canvas (graph plot) is contained inside connectionsAnchorPane.
+     * statusAnchorPane has a height and a width property that can be
+     * listened to. This method sets up the listeners.
+     * 
+     * Not the canvas sits inside an Anchor Pane but this would only
+     * respond to increases in size. Shrinking the window was ignored.
+     * 
+     * Using statusAnchorPane worked but included the button bar (buttonFlowPane) 
+     * and Status panel (statusAnchorPane) so these sizes are used to calculate 
+     * the canvas size
+     */
+    private void initTheCanvas() {
+        /*
+        Get statusAnchorPane and buttonFlowPane heights
+        */
+        double hightAdjust = statusAnchorPane.getPrefHeight() + buttonFlowPane.getPrefHeight();
+        /*
+        Add a listener to the Width property that sets the canvas to the same width
+         */
+        mainBorderPane.widthProperty().addListener((obs, oldVal, newVal) -> {
+            /*
+            Width has changed. Update the canvas width!
+            */
+            try {
+                canvasWidth = mainBorderPane.getWidth();
+                mainCanvas.setWidth(canvasWidth);
+                canvasGraphics = mainCanvas.getGraphicsContext2D();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+        /*
+        Add a listener to the height property that sets the canvas to the same height
+         */
+        mainBorderPane.heightProperty().addListener((obs, oldVal, newVal) -> {
+            /*
+            Height has changed. Update the canvas height!
+            */
+            try {
+                canvasHeight = mainBorderPane.getHeight() - hightAdjust;
+                mainCanvas.setHeight(canvasHeight);
+                canvasGraphics = mainCanvas.getGraphicsContext2D();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+    }
 
 }
