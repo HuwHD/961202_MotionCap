@@ -17,24 +17,31 @@
  */
 package main;
 
+import config.ConfigData;
+import java.io.ObjectInputFilter;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import serial.Reading;
+import serial.SerialMonitorThread;
 import serial.SerialPortListener;
 
 /**
@@ -42,8 +49,10 @@ import serial.SerialPortListener;
  */
 public class FXMLDocumentController implements Initializable, SerialPortListener {
 
+    private static final double TO_RADIANS = Math.PI / 180.0;
     private final Timer displayTimer = new Timer();
     private GraphicsContext canvasGraphics;
+    private boolean connected;
     private double canvasWidth;
     private double canvasHeight;
     /*
@@ -51,6 +60,15 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
      */
     private static Readings readings = new Readings(50);
 
+    @FXML
+    private ChoiceBox choiceBoxPortList;
+
+    @FXML
+    private Button buttonConnect;
+
+    @FXML
+    private Button buttonCalibrateHeading;
+    
     @FXML
     private Canvas mainCanvas;
     /*
@@ -83,13 +101,37 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         Main.closeApplication(0);
     }
 
+    @FXML
+    private void handleButtonConnect() {
+        if (connected) {
+            Main.getSerialMonitorThread().close();
+        } else {
+            Main.connectToSensor(choiceBoxPortList.getSelectionModel().getSelectedItem().toString());
+        }
+    }
+
+    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.0");
+    @FXML
+    private void handleCalibrateHeading() {
+        long[] headingData = ConfigData.getLongs(ConfigData.CALIB_HEADING_DATA, 3);
+        headingData[0] = (long)readings.getLastReading().getHeading();
+        ConfigData.set(ConfigData.CALIB_HEADING_DATA, String.format("%d,%d,%d", headingData[0], headingData[1],headingData[2]));
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                Main.startMouseController();
+            }
+        });
+    }
+    
+    
+
     @Override
     public void reading(Reading reading) {
         /*
         Add the reading to the list of readings.
          */
         readings.add(reading);
-
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
@@ -103,11 +145,37 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
 
     @Override
     public void fail(Exception e) {
-        status2.setText(e.getMessage());
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                status2.setText(e.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void connected(String devicePort, int baud, String name) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                initConnectButtonState(true, devicePort, name);
+            }
+        });
+    }
+
+    @Override
+    public void disConnected(String devicePort, String name) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                initConnectButtonState(false, devicePort, name);
+            }
+        });
     }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        initConnections();
         initTheCanvas();
         displayTimer.scheduleAtFixedRate(displayTimerTask, 1, 200);
     }
@@ -127,9 +195,16 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                 double tickHeight = canvasHeight / 50;
                 double yOrg = canvasHeight / 2; // Center of the canvas
                 double xOrg = canvasWidth / 2;  // Center of the canvas
+                double radius = Math.min(canvasHeight, canvasWidth) / 4;
+                double radius2 = Math.min(canvasHeight, canvasWidth) / 3;
+                double scaleY = canvasHeight / 2000;
+                double xPos;
+                double yPos;
+                double yPosPrev;
                 /*
                 Init the canvas with a background colour and fill it!
                  */
+                canvasGraphics.setFont(new Font(20));
                 canvasGraphics.setFill(Color.AQUA);
                 canvasGraphics.fillRect(0, 0, canvasWidth, canvasHeight);
                 /*
@@ -149,92 +224,60 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                         canvasGraphics.strokeLine(t * xStep, yOrg, t * xStep, yOrg - tickHeight);
                     }
                 }
-
-                /*
-                    Draw the fences.
-                 */
-//                if (mouseController != null) {
-//                    connectionCanvasGraphics.setStroke(Color.PINK);
-//                    Fences lrf = mouseController.getLeftRightFences();
-//                    double lrv = 0;
-//                    for (int i = 0; i < lrf.count(); i++) {
-//                        lrv = xOrg + lrf.get(i);
-//                        connectionCanvasGraphics.strokeLine(lrv, 0, lrv, connectionCanvasHeight);
-//                    }
-//                    connectionCanvasGraphics.setStroke(Color.CORAL);
-//                    Fences udf = mouseController.getUpDownFences();
-//                    double udv = 0;
-//                    for (int i = 0; i < udf.count(); i++) {
-//                        udv = yOrg + udf.get(i);
-//                        connectionCanvasGraphics.strokeLine(0, udv, connectionCanvasWidth, udv);
-//                    }
-//                }
-
                 /*
                     If there are ANY values in the readings
                  */
-                double scaleY = canvasHeight / 5000;
+                canvasGraphics.setLineWidth(2);
                 if (readings.size() > 0) {
                     List<Reading> list = readings.readings();
-                    double xPos = 0;
-                    double yPos = yOrg;
+                    canvasGraphics.setStroke(Color.RED);
+                    xPos = -(xStep * 2);
+                    yPos = yOrg;
+                    yPosPrev = yPos;
                     for (Reading reading : list) {
-                        canvasGraphics.strokeLine(xPos, yPos, xPos + xStep, yPos + (reading.getX()*scaleY));
                         xPos = xPos + xStep;
-                        yPos = yPos + (reading.getX()*scaleY);
+                        yPos = yOrg + (reading.getX() * scaleY);
+                        canvasGraphics.strokeLine(xPos, yPosPrev, xPos + xStep, yPos);
+                        yPosPrev = yPos;
                     }
-//                        /*
-//                        For each line.
-//                         */
-//                    for (int i = 0; i < 2; i++) {
-//                            /*
-//                            Set the colour and scale for each line
-//                             */
-//                        connectionCanvasGraphics.setStroke(colours[i]);
-//                        double scaleY = connectionCanvasHeight / scales[i];
-//                            /*
-//                            Plot the values. We need from and to values as we want to draw lines
-//                            The last to value becomes the next from value!
-//                            Set the initial values
-//                             */
-//                        double xTo = -xStep;
-//                        double yTo = yOrg;
-//                        double xfrom = xTo;
-//                        double yfrom = yTo;
-//                        for (double[] reading : readingData) {
-//                                /*
-//                                Derive the to values and plot.
-//                                 */
-//                            yTo = yOrg - reading[i] * scaleY;
-//                            xTo += xStep;
-//                            connectionCanvasGraphics.strokeLine(xfrom, yfrom, xTo, yTo);
-//                                /*
-//                                Copy the to values to the from values for the next plot.
-//                                 */
-//                            xfrom = xTo;
-//                            yfrom = yTo;
-//                        }
-//                    }
-//                    Reading lastReading = readings.getLastReading();
-//                    if (lastReading != null) {
-//                        currentLeftRightReading = lastReading.getHeading();
-//                        connectionCanvasGraphics.setStroke(Color.BLACK);
-//                        connectionCanvasGraphics.strokeText("Latency: " + lastReading.getFormattedLatency() + " ms", dataOffset, 20);
-//                        connectionCanvasGraphics.strokeText(" X: " + lastReading.getFormattedX(), dataOffset, 40);
-//                        connectionCanvasGraphics.strokeText(" Y: " + lastReading.getFormattedY(), dataOffset, 60);
-//                        connectionCanvasGraphics.strokeText("NS: " + lastReading.getFormattedNS(), dataOffset, 80);
-//                        connectionCanvasGraphics.strokeText("WE: " + lastReading.getFormattedWE(), dataOffset, 100);
-//                        connectionCanvasGraphics.strokeText(" D: " + currentLeftRightReading, dataOffset, 120);
-//                        double compass = xOrg + currentLeftRightReading;
-//                        connectionCanvasGraphics.strokeLine(compass, 0, compass, connectionCanvasHeight);
-//                    }
+                    canvasGraphics.setStroke(Color.GREEN);
+                    xPos = -(xStep * 2);
+                    yPos = yOrg;
+                    yPosPrev = yPos;
+                    for (Reading reading : list) {
+                        xPos = xPos + xStep;
+                        yPos = yOrg + (reading.getY() * scaleY);
+                        canvasGraphics.strokeLine(xPos, yPosPrev, xPos + xStep, yPos);
+                        yPosPrev = yPos;
+                    }
+                }
+                Reading lastReading = readings.getLastReading();
+                if (lastReading != null) {
+                    canvasGraphics.setStroke(Color.BLACK);
+                    canvasGraphics.strokeOval(xOrg - radius, yOrg - radius, radius * 2, radius * 2);
+                    drawClockHand(xOrg, yOrg, radius, 0, Color.YELLOW, "North");
+                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMin(), Color.BLACK, "Min:"+Main.getMouseController().getHeadingMin());
+                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMax(), Color.BLACK, "Max:"+Main.getMouseController().getHeadingMax());
+                    drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMin(), Color.RED, "Min:"+Main.getMouseController().getHeadingLimitMin());
+                    drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMax(), Color.RED, "Max:"+Main.getMouseController().getHeadingLimitMax());
+                    drawClockHand(xOrg, yOrg, radius2, (long)lastReading.getHeading(), Color.BLUE, String.valueOf(lastReading.getHeading()));
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
-
     };
+
+    public void drawClockHand(double xOrg, double yOrg, double radius, long degrees, Color colour, String marker) {
+        canvasGraphics.setStroke(colour);
+        double rr = (degrees + 90) * TO_RADIANS;
+        double yy = radius * Math.sin(rr);
+        double xx = radius * Math.cos(rr);
+        canvasGraphics.strokeLine(xOrg, yOrg, xOrg + xx, yOrg - yy);
+        yy = (radius + 30) * Math.sin(rr);
+        xx = (radius + 30) * Math.cos(rr);
+        canvasGraphics.strokeText(marker, (xOrg + xx) - 20, (yOrg - yy) + 10);
+    }
 
     /**
      * The canvas (graph plot) is contained inside connectionsAnchorPane.
@@ -285,10 +328,27 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         });
     }
 
-    @Override
-    public void connected(String devicePort, int baud, String name) {
-        System.out.println("************");
-        status2.setText("Connected: Port " + devicePort);
+    private void initConnections() {
+        choiceBoxPortList.setItems(FXCollections.observableArrayList(SerialMonitorThread.getPortList()));
+        choiceBoxPortList.getSelectionModel().select(ConfigData.getDefaultPort());
+        if (Main.getSerialMonitorThread() != null) {
+            initConnectButtonState(Main.getSerialMonitorThread().isRunning(), Main.getSerialMonitorThread().getDevicePort(), Main.getSerialMonitorThread().getDeviceName());
+        } else {
+            initConnectButtonState(false, null, null);
+        }
+
+        buttonConnect.setText(connected ? "Dis-Connect" : "Connect");
+    }
+
+    private void initConnectButtonState(boolean connected, String devicePort, String name) {
+        this.connected = connected;
+        this.buttonConnect.setText(connected ? "Dis-Connect" : "Connect");
+        if (devicePort == null) {
+            this.status2.setText("Select a port and press 'Connect'");
+        } else {
+            this.status2.setText((connected ? "" : "Dis") + "Connected Port:" + devicePort + " Device:" + name);
+        }
+        buttonCalibrateHeading.setDisable(!connected);
     }
 
 }

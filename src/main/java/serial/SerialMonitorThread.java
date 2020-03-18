@@ -30,46 +30,59 @@ public class SerialMonitorThread extends Thread {
 
     private final SerialPort serialPort;
     private final InputStream portInStream;
-    private final String name;
+    private final String deviceName;
+    private final String devicePort;
+    private final int deviceBaud;
     private boolean canRun = true;
     private boolean running = false;
 
     /**
      * Connect to the serial port
+     *
      * @param devicePort The name of the port
-     * @param baud The speed of the port (baud rate)
+     * @param deviceBaud The speed of the port (baud rate)
      * @param serialPortListener A listener for events that can occur
-     * @param name The (human readable) name of the port.
+     * @param deviceName The (human readable) name of the port.
      * @throws serial.SerialMonitorException when connection fails.
      */
-    public SerialMonitorThread(String devicePort, int baud, SerialPortListener serialPortListener, String name) throws SerialMonitorException {
-        this.name = name;
+    public SerialMonitorThread(String devicePort, int deviceBaud, SerialPortListener serialPortListener, String deviceName) throws SerialMonitorException {
+        this.deviceName = deviceName;
+        this.devicePort = devicePort;
+        this.deviceBaud = deviceBaud;
         try {
             serialPort = (SerialPort) CommPortIdentifier.getPortIdentifier(devicePort).open("abc", 0);
         } catch (NoSuchPortException ex) {
-            throw new SerialMonitorException("Port not found: port[" + devicePort + "] baud[" + baud + "] name[" + name + "]. Available ports are: "+getPortListAsString(), ex);
+            throw new SerialMonitorException("Port not found: port[" + devicePort + "] baud[" + deviceBaud + "] name[" + deviceName + "]. Available ports are: " + getPortListAsString(), ex);
         } catch (PortInUseException ex) {
-            throw new SerialMonitorException("Port is already open: port[" + devicePort + "] baud[" + baud + "] name[" + name + "]", ex);
+            throw new SerialMonitorException("Port is already open: port[" + devicePort + "] baud[" + deviceBaud + "] name[" + deviceName + "]", ex);
         }
         try {
-            serialPort.setSerialPortParams(baud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+            serialPort.setSerialPortParams(deviceBaud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
             serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
         } catch (UnsupportedCommOperationException ex) {
-            throw new SerialMonitorException("Failed to configure port[" + devicePort + "] baud[" + baud + "] name[" + name + "]", ex);
+            throw new SerialMonitorException("Failed to configure port[" + devicePort + "] baud[" + deviceBaud + "] name[" + deviceName + "]", ex);
         }
         try {
             portInStream = serialPort.getInputStream();
         } catch (IOException ex) {
-            throw new SerialMonitorException("Failed connect to port[" + devicePort + "] baud[" + baud + "] name[" + name + "]", ex);
+            throw new SerialMonitorException("Failed connect to port[" + devicePort + "] baud[" + deviceBaud + "] name[" + deviceName + "]", ex);
         }
         this.serialPortListener = serialPortListener;
-        if (serialPortListener!=null) {
-            serialPortListener.connected(devicePort, baud, name);
+        if (serialPortListener != null) {
+            serialPortListener.connected(devicePort, deviceBaud, deviceName);
         }
     }
 
-    public String getPortName() {
-        return name;
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public String getDevicePort() {
+        return devicePort;
+    }
+
+    public int getDeviceBaud() {
+        return deviceBaud;
     }
 
     /**
@@ -80,11 +93,14 @@ public class SerialMonitorThread extends Thread {
         Ensure the thread exits
          */
         canRun = false;
-     }
+    }
 
     @Override
     public void run() {
         running = true;
+        if (serialPortListener != null) {
+            serialPortListener.connected(getDevicePort(), getDeviceBaud(), getDeviceName());
+        }
         StringBuilder sb = new StringBuilder();
         try {
             int b = portInStream.read();
@@ -118,19 +134,24 @@ public class SerialMonitorThread extends Thread {
         } finally {
             /*
             Ensure serial port is freed!
-            */
+             */
             if (serialPort != null) {
                 serialPort.close();
             }
             running = false;
+            if (serialPortListener != null) {
+                serialPortListener.disConnected(getDevicePort(), getDeviceName());
+            }
+
         }
     }
 
     /**
-     * Return the list of available ports as a String so we can tell the user what is valid.
-     * 
+     * Return the list of available ports as a String so we can tell the user
+     * what is valid.
+     *
      * Mark is used to remove the last comma.
-     * 
+     *
      * @return A CSV list of available ports
      */
     public static String getPortListAsString() {
@@ -147,6 +168,7 @@ public class SerialMonitorThread extends Thread {
 
     /**
      * Use purejavacomm to Find a list of all available ports;
+     *
      * @return A list of ports
      */
     public static List<String> getPortList() {

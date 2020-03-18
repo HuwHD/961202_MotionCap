@@ -20,8 +20,6 @@ package main;
 import config.ConfigData;
 import config.ConfigException;
 import java.awt.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -43,7 +41,7 @@ public class Main extends Application {
     private static Stage mainStage;
     private static Scene mainScene;
     private static SerialPortListener guiController;
-    private static SerialPortListener mouseController;
+    private static MouseController mouseController;
 
     private static SerialMonitorThread serialMonitorThread;
     private static RobotMouseThread robotMouseThread;
@@ -127,12 +125,12 @@ public class Main extends Application {
      * It forwards messages to the GUI controller if it has been set up. It
      * forwards messages to the Mouse controller if it has been set up.
      */
-    public static void connectToSensor() {
+    public static void connectToSensor(String port) {
         /*
         Start the serial port reader thread and add a listener for any events
          */
         try {
-            serialMonitorThread = new SerialMonitorThread(ConfigData.getDefaultPort(), ConfigData.getDefaultBaud(), new SerialPortListener() {
+            serialMonitorThread = new SerialMonitorThread(port, ConfigData.getDefaultBaud(), new SerialPortListener() {
                 @Override
                 public void reading(Reading reading) {
                     if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
@@ -173,13 +171,40 @@ public class Main extends Application {
                     }
                 }
 
-            }, "Sensor Port");
+                @Override
+                public void disConnected(String devicePort, String name) {
+                    if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
+                        System.out.println("Dis-Connected port:" + devicePort);
+                    }
+                    if (guiController != null) {
+                        guiController.disConnected(devicePort, name);
+                    }
+                    if (mouseController != null) {
+                        mouseController.disConnected(devicePort, name);
+                    }
+                }
+
+            }, ConfigData.getValue(ConfigData.SENSOR_NAME, "Sensor"));
         } catch (SerialMonitorException sme) {
-            exitProgramWithHelp("Serial port monitor could not be started.", sme);
+            /*
+            If the GUI is running jus display the error message
+             */
+            if (guiController != null) {
+                guiController.fail(sme);
+            } else {
+                /*
+                Otherwise we need to exit!
+                 */
+                exitProgramWithHelp("Serial port monitor could not be started.", sme);
+            }
         }
         if (serialMonitorThread != null) {
             serialMonitorThread.start();
         }
+    }
+
+    public static void startMouseController() {
+        mouseController = new MouseController(robotMouseThread, ConfigData.getLongs(ConfigData.CALIB_HEADING_DATA, 3));
     }
 
     /**
@@ -199,7 +224,7 @@ public class Main extends Application {
         }
 
         if (ConfigData.getBoolean(ConfigData.CONNECT_ON_LOAD, true)) {
-            connectToSensor();
+            connectToSensor(ConfigData.getDefaultPort());
         }
         /*
         Start the robot mouse thread and ad a listener for any events
@@ -217,7 +242,11 @@ public class Main extends Application {
         Create the mouse controller.. This receives messages from the Sensor 
         an decides what to do with the mouse via the robotMouseThread
          */
-        mouseController = new MouseController(robotMouseThread);
+        try {
+            startMouseController();
+        } catch (ConfigException ce) {
+            exitProgramWithHelp("Configuration data '" + args[0] + "' could not be loaded", ce);
+        }
 
         if (ConfigData.getBoolean(ConfigData.LAUNCH_GUI, true)) {
             launch(args);
@@ -280,4 +309,17 @@ public class Main extends Application {
     public static Scene getMainScene() {
         return mainScene;
     }
+
+    public static MouseController getMouseController() {
+        return mouseController;
+    }
+
+    public static SerialMonitorThread getSerialMonitorThread() {
+        return serialMonitorThread;
+    }
+
+    public static RobotMouseThread getRobotMouseThread() {
+        return robotMouseThread;
+    }
+
 }

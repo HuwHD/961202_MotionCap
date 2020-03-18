@@ -21,7 +21,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -42,6 +44,7 @@ public class ConfigData {
     
     These are public so any class can get the property names.
      */
+    public static final String CALIB_HEADING_DATA = "calibrate.heading.data";
     public static final String SETTINGS_FILE_KEY = "settings.file";
     public static final String DEFAULT_PORT_KEY = "default.port";
     public static final String DEFAULT_BAUD = "default.baud";
@@ -49,12 +52,12 @@ public class ConfigData {
     public static final String TYPE_DELAY_KEY = "delay.ms.type";
     public static final String MOVE_DELAY_KEY = "delay.ms.move";
     public static final String CONNECT_ON_LOAD = "connectOnLoad";
+    public static final String SENSOR_NAME = "sensorName";
     public static final String LAUNCH_GUI = "launchGUI";
     public static final String SENSOR_TO_CONSOLE = "sendSensorReadingsToConsole";
-    
 
     Map<String, String> sm = new HashMap<>();
-    
+
     private static final String OSNAME = getOsNameFromEnvironment();
     /*
     The file name so we can display error messages
@@ -73,10 +76,9 @@ public class ConfigData {
     private static Properties settings;
 
     /**
-     * Get a MANDATORY list value from the configuration data
-     * List is formatted as a '|' separated list.
-     * A|B|c etc.
-     * Any leading or trailing spaces are retained.
+     * Get a MANDATORY list value from the configuration data List is formatted
+     * as a '|' separated list. A|B|c etc. Any leading or trailing spaces are
+     * retained.
      * <pre>
      * Names prefixed with <b>'os.[osname].'</b> take precedence.
      * For example: <b>os.linux.app.name</b> wins over <b>app.name</b>
@@ -94,7 +96,7 @@ public class ConfigData {
         return array;
     }
 
-   /**
+    /**
      * Add a value to the settings and update the settings file.
      *
      * The settings file name must be defined in the configuration data using
@@ -209,6 +211,22 @@ public class ConfigData {
         return s;
     }
 
+    public static long[] getLongs(String name, int count) {
+        String[] values = getValue(name).split("\\,");
+        if (values.length != count) {
+            throw new ConfigException("Config data [" + fileName + "] property [" + name + "] must have "+count+" numbers. It must be a valid list of comma separated numbers");
+        }
+        long[] longs = new long[values.length];
+        for (int i = 0; i < values.length; i++) {
+            try {
+                longs[i] = Long.parseLong(values[i].trim());
+            } catch (NumberFormatException nfe) {
+                throw new ConfigException("Config data [" + fileName + "] property [" + name + "] value ["+values[i]+"] is invalid. It must be a valid list of comma separated numbers");
+            }
+        }
+        return longs;
+    }
+
     /**
      * Get an optional integer property or a default value if not found.
      * <pre>
@@ -250,6 +268,7 @@ public class ConfigData {
 
     /**
      * Get a boolean value. If not defined then return defaultValue.
+     *
      * @param name The name of the property
      * @param defaultValue If not defined then return this.
      * @return The property value as a boolean.
@@ -257,15 +276,18 @@ public class ConfigData {
     public static boolean getBoolean(String name, boolean defaultValue) {
         return getValue(name, Boolean.toString(defaultValue)).toLowerCase().startsWith("true");
     }
-    
+
     /**
-     * Get a boolean value. If not defined then getValue(name) will throw an exception.
+     * Get a boolean value. If not defined then getValue(name) will throw an
+     * exception.
+     *
      * @param name The name of the property
-     * @return The property value as a boolean. Throws exception if undefined. 
+     * @return The property value as a boolean. Throws exception if undefined.
      */
     public static boolean getBoolean(String name) {
         return getValue(name).toLowerCase().startsWith("true");
     }
+
     /**
      * Load the configuration data.This should only be done ONCE!
      *
@@ -352,7 +374,7 @@ public class ConfigData {
     /**
      * Short cut method to get the click delay value for the mouse
      *
-      * @return the integer value in Milli Seconds
+     * @return the integer value in Milli Seconds
      */
     public static int getClickDelay() {
         return getInt(CLICK_DELAY_KEY, 10);

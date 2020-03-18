@@ -104,7 +104,7 @@ public class Reading {
     public double getHeading() {
         return heading;
     }
-
+    
     public boolean isB1() {
         return b1;
     }
