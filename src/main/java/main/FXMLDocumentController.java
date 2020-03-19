@@ -26,6 +26,8 @@ import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -58,7 +60,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     /*
     A list (queue) of the last N readings. This is so we can plot the reading on the canvas
      */
-    private static Readings readings = new Readings(50);
+    private static Readings readings = new Readings(100);
 
     @FXML
     private ChoiceBox choiceBoxPortList;
@@ -179,7 +181,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         initTheCanvas();
         displayTimer.scheduleAtFixedRate(displayTimerTask, 1, 200);
     }
-
+           
     TimerTask displayTimerTask = new TimerTask() {
         @Override
         public void run() {
@@ -299,16 +301,19 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         /*
         Add a listener to the Width property that sets the canvas to the same width
          */
-        mainBorderPane.widthProperty().addListener((obs, oldVal, newVal) -> {
-            /*
-            Width has changed. Update the canvas width!
-             */
-            try {
-                canvasWidth = mainBorderPane.getWidth();
-                mainCanvas.setWidth(canvasWidth);
-                canvasGraphics = mainCanvas.getGraphicsContext2D();
-            } catch (Exception ex) {
-                ex.printStackTrace();
+       mainBorderPane.widthProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> obs, Number oldVal, Number newVal) {
+                /*
+                Width has changed. Update the canvas width!
+                */
+                try {
+                    canvasWidth = mainBorderPane.getWidth();
+                    mainCanvas.setWidth(canvasWidth);
+                    canvasGraphics = mainCanvas.getGraphicsContext2D();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         });
         /*

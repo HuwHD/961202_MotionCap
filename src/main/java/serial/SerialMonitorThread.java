@@ -68,9 +68,6 @@ public class SerialMonitorThread extends Thread {
             throw new SerialMonitorException("Failed connect to port[" + devicePort + "] baud[" + deviceBaud + "] name[" + deviceName + "]", ex);
         }
         this.serialPortListener = serialPortListener;
-        if (serialPortListener != null) {
-            serialPortListener.connected(devicePort, deviceBaud, deviceName);
-        }
     }
 
     public String getDeviceName() {

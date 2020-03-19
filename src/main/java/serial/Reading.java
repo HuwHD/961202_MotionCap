@@ -23,6 +23,7 @@ import java.text.DecimalFormat;
  * Read from the sensor data String
  */
 public class Reading {
+    private static final double TO_DEGREES = 180.0 / Math.PI ;
 
     private static final int SERIES_X = 0;
     private static final int SERIES_Y = 1;
@@ -101,8 +102,27 @@ public class Reading {
         return we;
     }
 
-    public double getHeading() {
+    /**
+     * Read the heading in degrees.
+     * 
+     * This is the heading computed from Polar (NS, WE) to degrees.
+     * 
+     * @return 
+     */
+    public long getHeading() {
+        return Math.round(Math.atan2(getWE(), getNS()) * TO_DEGREES);
+        /*
+        Not using the heading provided by the MicroBit as it became erratic 
+        when it was near 0 degrees (Polar North). 
+        
+        Assumption is that the calculation within the MicroBit was not 
+        reliably returning the correct values when aproaching 0 degrees.
+        
+        If we do the conversion in Java the behaviour is consistent and the 
+        problem no longer occurs.
+        
         return heading;
+        */
     }
     
     public boolean isB1() {
