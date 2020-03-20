@@ -22,5 +22,5 @@ package mouse;
  * @author Stuart
  */
 public enum MouseHeadingState {
-    INACTIVE, CLOCKWISE, ANTCLOCKWISE, NULL_ZONE;
+    INACTIVE, ACTIVE, NULL_ZONE;
 }

@@ -198,7 +198,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                 double xOrg = canvasWidth / 2;  // Center of the canvas
                 double radius = Math.min(canvasHeight, canvasWidth) / 4;
                 double radius2 = Math.min(canvasHeight, canvasWidth) / 3;
-                double scaleY = canvasHeight / 5;
+                double scaleY = canvasHeight / 2;
                 double xPos;
                 double yPos;
                 double yPosPrev;
@@ -268,7 +268,18 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                     drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMax(), Color.BLACK,1, "Max:"+Main.getMouseController().getHeadingMax());
                     drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMin(), Color.RED,1, "Min:"+Main.getMouseController().getHeadingLimitMin());
                     drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMax(), Color.RED,1, "Max:"+Main.getMouseController().getHeadingLimitMax());
-                    drawClockHand(xOrg, yOrg, radius2, (long)lastReading.getHeading(), Color.BLUE,2, String.valueOf(lastReading.getHeading()));
+                    Color col;
+                    switch (Main.getMouseController().getMouseHeadingState()) {
+                        case ACTIVE:
+                            col = Color.GREEN;
+                            break;
+                        case NULL_ZONE:
+                            col = Color.YELLOW;
+                            break;
+                        default:
+                            col = Color.RED;
+                    }
+                    drawClockHand(xOrg, yOrg, radius2, (long)lastReading.getHeading(), col,2, String.valueOf(lastReading.getHeading()) + " ("+Main.getMouseController().getMouseHeadingOffset()+")");            
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();

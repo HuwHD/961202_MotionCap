@@ -30,7 +30,7 @@ public class Degrees {
 
     private final long degrees;
 
-    public Degrees(int degrees) {
+    public Degrees(long degrees) {
         this.degrees = degrees;
     }
     
@@ -46,11 +46,11 @@ public class Degrees {
         return degrees;
     }
 
-    public Degrees add(int d) {
+    public Degrees add(long d) {
         return new Degrees(antiClockwise(this.degrees, d));
     }
 
-    public Degrees sub(int d) {
+    public Degrees sub(long d) {
         return new Degrees(clockwise(this.degrees, d));
     }
 

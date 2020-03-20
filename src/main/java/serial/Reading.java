@@ -54,7 +54,6 @@ public class Reading {
     private final long timestamp;
 
     public static Reading parse(String data) {
-        System.out.println(data);
         if (data == null) {
             return null;
         }
