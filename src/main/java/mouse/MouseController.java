@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Huw Hudson-Davies
+ * Copyright (C) 2020 Huw Hudson-Davies
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,8 +30,11 @@ public class MouseController implements SerialPortListener {
     private final long headingLimitMax;
     private final long headingOffset;
     private final long limitWidth;
+    private MouseHeadingState mouseHeadingState;
+    private boolean connected = false;
 
     public MouseController(RobotMouseThread robotMouseThread, long[] headingData) {
+        stop();
         this.robotMouseThread = robotMouseThread;
         this.headingOffset = headingData[0];
         this.headingMin = sub(headingOffset, headingData[1]);
@@ -41,6 +44,15 @@ public class MouseController implements SerialPortListener {
         this.headingLimitMax = add(headingOffset, headingData[2]);
     }
 
+    public final void start() {
+        mouseHeadingState = MouseHeadingState.NULL_ZONE;
+        connected = true;
+    }
+    
+    public final void stop() {
+        mouseHeadingState = MouseHeadingState.INACTIVE;
+        connected = false;
+    }
     private long sub(long deg, long val) {
         deg = deg - val;
         while (deg < 0) {
@@ -59,23 +71,23 @@ public class MouseController implements SerialPortListener {
 
     @Override
     public void reading(Reading r) {
-        if (r != null) {
+        if (connected && (r!=null)) {
             long heading = (long) r.getHeading();
             long beMax = belowOrEqualToMax(heading);
             long aeMin = aboveOrEqualToMin(heading);
             int c = 0;
             if ((beMax >= 0) && (aeMin >= 0)) {
-                System.out.print(c+": beMax:" + beMax + " aeMin:" + aeMin + " ");
+//                System.out.print(c+": beMax:" + beMax + " aeMin:" + aeMin + " ");
                 if ((beMax == headingMax) && (aeMin == headingMin)) {
-                    System.out.print("MID");
+//                    System.out.print("MID");
                 }
                 if ((beMax == headingMin) && (aeMin == headingLimitMin)) {
-                    System.out.print("MIN");
+//                    System.out.print("MIN");
                 }
                 if ((beMax == headingLimitMax) && (aeMin == headingMax)) {
-                    System.out.print("MAX");
+//                    System.out.print("MAX");
                 }
-                System.out.println("");
+//                System.out.println("");
                 c++;
             }
         }

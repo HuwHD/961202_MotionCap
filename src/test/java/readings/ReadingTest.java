@@ -8,7 +8,7 @@ import serial.Reading;
 public class ReadingTest {
 
     @Test
-        @Ignore
+    @Ignore
     public void testRangeDouble() {
         Reading r;
         r = Reading.parse("10.456,143,0.5,.5,20,0,0:");

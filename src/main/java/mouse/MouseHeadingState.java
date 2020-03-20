@@ -15,20 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package serial;
+package mouse;
 
 /**
- * Data error occurred.
+ *
+ * @author Stuart
  */
-public class ReadingException extends RuntimeException {
-
-    public ReadingException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public ReadingException(String message) {
-        super(message);
-    }
-   
-    
+public enum MouseHeadingState {
+    INACTIVE, CLOCKWISE, ANTCLOCKWISE, NULL_ZONE;
 }

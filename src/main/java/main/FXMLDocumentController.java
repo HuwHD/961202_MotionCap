@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Huw Hudson-Davies
+ * Copyright (C) 2020 Huw Hudson-Davies
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 package main;
 
 import config.ConfigData;
-import java.io.ObjectInputFilter;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.List;
@@ -199,10 +198,11 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                 double xOrg = canvasWidth / 2;  // Center of the canvas
                 double radius = Math.min(canvasHeight, canvasWidth) / 4;
                 double radius2 = Math.min(canvasHeight, canvasWidth) / 3;
-                double scaleY = canvasHeight / 2000;
+                double scaleY = canvasHeight / 5;
                 double xPos;
                 double yPos;
                 double yPosPrev;
+                double lastPlotReading;
                 /*
                 Init the canvas with a background colour and fill it!
                  */
@@ -236,41 +236,48 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                     xPos = -(xStep * 2);
                     yPos = yOrg;
                     yPosPrev = yPos;
+                    lastPlotReading = 0;
                     for (Reading reading : list) {
+                        lastPlotReading = reading.getX();
                         xPos = xPos + xStep;
-                        yPos = yOrg + (reading.getX() * scaleY);
+                        yPos = yOrg + (lastPlotReading * scaleY);
                         canvasGraphics.strokeLine(xPos, yPosPrev, xPos + xStep, yPos);
                         yPosPrev = yPos;
                     }
+                    canvasGraphics.strokeText(""+lastPlotReading, xPos-80, yPos-7);
                     canvasGraphics.setStroke(Color.GREEN);
                     xPos = -(xStep * 2);
                     yPos = yOrg;
                     yPosPrev = yPos;
+                    lastPlotReading = 0;
                     for (Reading reading : list) {
+                        lastPlotReading = reading.getY();
                         xPos = xPos + xStep;
-                        yPos = yOrg + (reading.getY() * scaleY);
+                        yPos = yOrg + (lastPlotReading * scaleY);
                         canvasGraphics.strokeLine(xPos, yPosPrev, xPos + xStep, yPos);
                         yPosPrev = yPos;
                     }
+                    canvasGraphics.strokeText(""+lastPlotReading, xPos-80, yPos+20);
                 }
                 Reading lastReading = readings.getLastReading();
                 if (lastReading != null) {
                     canvasGraphics.setStroke(Color.BLACK);
                     canvasGraphics.strokeOval(xOrg - radius, yOrg - radius, radius * 2, radius * 2);
-                    drawClockHand(xOrg, yOrg, radius, 0, Color.YELLOW, "North");
-                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMin(), Color.BLACK, "Min:"+Main.getMouseController().getHeadingMin());
-                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMax(), Color.BLACK, "Max:"+Main.getMouseController().getHeadingMax());
-                    drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMin(), Color.RED, "Min:"+Main.getMouseController().getHeadingLimitMin());
-                    drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMax(), Color.RED, "Max:"+Main.getMouseController().getHeadingLimitMax());
-                    drawClockHand(xOrg, yOrg, radius2, (long)lastReading.getHeading(), Color.BLUE, String.valueOf(lastReading.getHeading()));
+                    drawClockHand(xOrg, yOrg, radius, 0, Color.YELLOW,1, "North");
+                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMin(), Color.BLACK,1, "Min:"+Main.getMouseController().getHeadingMin());
+                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMax(), Color.BLACK,1, "Max:"+Main.getMouseController().getHeadingMax());
+                    drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMin(), Color.RED,1, "Min:"+Main.getMouseController().getHeadingLimitMin());
+                    drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMax(), Color.RED,1, "Max:"+Main.getMouseController().getHeadingLimitMax());
+                    drawClockHand(xOrg, yOrg, radius2, (long)lastReading.getHeading(), Color.BLUE,2, String.valueOf(lastReading.getHeading()));
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
-    };
+    }; 
 
-    public void drawClockHand(double xOrg, double yOrg, double radius, long degrees, Color colour, String marker) {
+    public void drawClockHand(double xOrg, double yOrg, double radius, long degrees, Color colour, double line, String marker) {
+        canvasGraphics.setLineWidth(line);
         canvasGraphics.setStroke(colour);
         double rr = (degrees + 90) * TO_RADIANS;
         double yy = radius * Math.sin(rr);

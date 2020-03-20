@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Huw Hudson-Davies
+ * Copyright (C) 2020 Huw Hudson-Davies
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -107,7 +107,10 @@ public class SerialMonitorThread extends Thread {
                         /*
                         Beware if you throw an exception in his method the SerialMonitior thread will terminate
                          */
-                        serialPortListener.reading(Reading.parse(sb.toString()));
+                        Reading reading = Reading.parse(sb.toString());
+                        if (reading != null) {
+                            serialPortListener.reading(reading);
+                        }
                     }
                     sb.setLength(0);
                 } else {
@@ -117,7 +120,8 @@ public class SerialMonitorThread extends Thread {
                     b = portInStream.read();
                 }
             }
-        } catch (IOException io) {
+        } catch (Exception io) {
+            io.printStackTrace();
             /*
             If an error occured here we cannot do a lot about it so
             we notify the action listener. Perhaps it can do somthing!
@@ -129,6 +133,7 @@ public class SerialMonitorThread extends Thread {
                 io.printStackTrace();
             }
         } finally {
+            System.out.println("FINALLY:" + canRun);
             /*
             Ensure serial port is freed!
              */

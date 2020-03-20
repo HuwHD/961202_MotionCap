@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Huw Hudson-Davies
+ * Copyright (C) 2020 Huw Hudson-Davies
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -146,9 +146,7 @@ public class Main extends Application {
                         mouseController.reading(reading);
                     }
                     if (reading.isB1()) {
-                        if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
-                            System.out.println("Button B1(A) was pressed");
-                        }
+                        System.out.println("Button B1(A) was pressed");
                         serialMonitorThread.close();
                     }
                 }
