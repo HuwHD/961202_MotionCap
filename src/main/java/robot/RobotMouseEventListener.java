@@ -23,5 +23,5 @@ import java.awt.*;
  * When a mouse event occurs the class with this interface will be caused.
  */
 public interface RobotMouseEventListener {
-    void mouseNotInPosition(Point expected, Point actual);
+    void mouseNotInPosition(Point expected, Point actual, int count);
 }

@@ -72,8 +72,8 @@ public class Reading {
             boolean b1 = parseBool(values[SERIES_BUTTON_A]);
             boolean b2 = parseBool(values[SERIES_BUTTON_B]);
             return new Reading(x, y, ns, we, ud, h, b1, b2);
-        } catch (ReadingException ex) {
-            System.err.println("Invalid sensor data [" + data + "] " + ex.getMessage());
+        } catch (Exception ex) {
+            System.err.println("Sensor reading exception [" + data + "] " + ex.getMessage());
             return null;
         }
     }

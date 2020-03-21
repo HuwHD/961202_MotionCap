@@ -229,8 +229,13 @@ public class Main extends Application {
          */
         robotMouseThread = new RobotMouseThread(new RobotMouseEventListener() {
             @Override
-            public void mouseNotInPosition(Point expected, Point actual) {
-                System.out.println("Mouse out of position");
+            public void mouseNotInPosition(Point expected, Point actual, int count) {
+                if ((mouseController!= null) && (mouseController.isMovingTheMouse())) {
+                    mouseController.stopMovingTheMouse();
+                }
+                if (guiController != null) {
+                    ((FXMLDocumentController)guiController).alert("Mouse is out of position ["+count+"]!");
+                }
             }
         }, getScreenRectangle());
 

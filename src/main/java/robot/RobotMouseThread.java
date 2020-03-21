@@ -25,12 +25,18 @@ import java.awt.event.InputEvent;
  */
 public class RobotMouseThread extends Thread {
 
+    private final static double MOUSE_NOT_IN_POSITION_TOLLERANCE = 20.0;
+    private final static int MOUSE_NOT_IN_POSITION_REPEATS = 2;
+
     private final Robot robot;
     private final RobotMouseEventListener listener;
+    private final Rectangle screenBounds;
+
     private boolean canRun = true;
+    private int outOfPositionCounts = 0;
     /*
     Doubles used to keep track of mouse position.
-    Actual mouse pos is integer. This means we would loose precision if we 
+    Actual mouse pos is integer but this means we would loose precision if we 
         read the mouse position then move 1/2 a pixel.
      */
     private double speedX;
@@ -39,12 +45,9 @@ public class RobotMouseThread extends Thread {
     private double mouseY;
     private boolean hasSpeed = false;
 
-    private Rectangle screenBounds;
-
     /**
-     * @param listener     Listen to events caused by the robot mouse movement.
+     * @param listener Listen to events caused by the robot mouse movement.
      * @param screenBounds The limits we can move the mouse
-     * @param moveDelay    To slow things down if required.
      */
     public RobotMouseThread(RobotMouseEventListener listener, Rectangle screenBounds) {
         try {
@@ -60,10 +63,12 @@ public class RobotMouseThread extends Thread {
     }
 
     public final void stopMouse() {
-        setSpeed(0.0, 0.0);
+        setSpeedX(0.0);
+        setSpeedY(0.0);
         Point p = MouseInfo.getPointerInfo().getLocation();
         mouseX = p.x;
         mouseY = p.y;
+        outOfPositionCounts = 0;
     }
 
     public final void moveMouseAbs(double x, double y) {
@@ -77,16 +82,27 @@ public class RobotMouseThread extends Thread {
         } else if (y > screenBounds.getMaxY()) {
             y = screenBounds.getMaxY();
         }
-        Point p = MouseInfo.getPointerInfo().getLocation();
 
-        if ((p.getX() != x) || (p.getY() != y)) {
-            if (listener != null) {
-                listener.mouseNotInPosition(new Point((int) x, (int) y), p);
+        Point p = MouseInfo.getPointerInfo().getLocation();
+        if (roughlyNotEqual(p.getX(), x, MOUSE_NOT_IN_POSITION_TOLLERANCE) || roughlyNotEqual(p.getY(), y, MOUSE_NOT_IN_POSITION_TOLLERANCE)) {
+            outOfPositionCounts++;
+            if (outOfPositionCounts > MOUSE_NOT_IN_POSITION_REPEATS) {
+                outOfPositionCounts = 0;
+                if (listener != null) {
+                    listener.mouseNotInPosition(new Point((int) x, (int) y), p, outOfPositionCounts);
+                }
             }
+        } else {
+            outOfPositionCounts = 0;
         }
         mouseX = x;
         mouseY = y;
         robot.mouseMove((int) x, (int) y);
+    }
+
+    public static boolean roughlyNotEqual(double a, double b, double tollerance) {
+        double diff = Math.abs(a - b);
+        return (diff > Math.abs(tollerance + 0.000001d));
     }
 
     public final void moveMouseRel(double dx, double dy) {
@@ -97,10 +113,14 @@ public class RobotMouseThread extends Thread {
         robot.delay(ms);
     }
 
-    public void setSpeed(double x, double y) {
-        this.hasSpeed = ((Math.abs(x) > 0.0001) || (Math.abs(y) > 0.0001));
-        this.speedX = x;
+    public void setSpeedY(double y) {
+        this.hasSpeed = ((Math.abs(this.speedX) > 0.0001) || (Math.abs(y) > 0.0001));
         this.speedY = y;
+    }
+
+    public void setSpeedX(double x) {
+        this.hasSpeed = ((Math.abs(x) > 0.0001) || (Math.abs(this.speedY) > 0.0001));
+        this.speedX = x;
     }
 
     public double getSpeedY() {
