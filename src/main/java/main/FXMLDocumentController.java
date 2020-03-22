@@ -74,6 +74,9 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     private Button buttonMouseMotion;
 
     @FXML
+    private Button buttonCalibrateVertical;
+
+    @FXML
     private Button buttonCalibrateHeading;
 
     @FXML
@@ -112,6 +115,20 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     private void handleButtonFinish(ActionEvent event) {
         Main.closeApplication(0);
     }
+
+    @FXML
+    private void handleButtonCalibrateVertical(ActionEvent event){
+        long[] verticalData = ConfigData.getLongs(ConfigData.CALIB_VERTICAL_DATA, 3);
+        verticalData[0] = (long) readings.getLastReading().getY();
+        ConfigData.set(ConfigData.CALIB_VERTICAL_DATA, String.format("%d,%d,%d", verticalData[0], verticalData[1], verticalData[2]));
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                Main.startMouseController();
+            }
+        });
+    };
+
 
     @FXML
     private void handleButtonConnect() {
@@ -277,7 +294,21 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
 //                    }
 //                    canvasGraphics.strokeText("" + lastPlotReading, xPos - 80, yPos - 7);
 
-                    canvasGraphics.setStroke(Color.GREEN);
+                    switch (Main.getMouseController().getMouseVerticalState()) {
+                        case INACTIVE:
+                            canvasGraphics.setStroke(Color.DARKGRAY);
+                            break;
+                        case ACTIVE:
+                            canvasGraphics.setStroke(Color.GREEN);
+                            break;
+                        case NULL_ZONE:
+                            canvasGraphics.setStroke(Color.YELLOW);
+                            break;
+                        default:
+                            canvasGraphics.setStroke(Color.RED);
+                            break;
+                    }
+
                     xPos = -(xStep * 2);
                     yPos = yOrg;
                     yPosPrev = yPos;
@@ -307,12 +338,12 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                     String actualHeading = String.valueOf(lastReading.getHeading());
                     String displayHeading;
                     switch (Main.getMouseController().getMouseHeadingState()) {
-                        case DISCONNECTED:
+                        case INACTIVE:
                             col = Color.DARKGREY;
                             displayHeading = actualHeading + "[D]";
                             break;
                         case ACTIVE:
-                            col = Color.LIGHTGREEN;
+                            col = Color.GREEN;
                             displayHeading = actualHeading + "[" + offsetHeading + "]";
                             break;
                         case NULL_ZONE:
@@ -452,6 +483,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
             this.status2.setText((connectedToSensor ? "" : "Dis") + "Connected Port:" + devicePort + " Device:" + name);
         }
         buttonCalibrateHeading.setDisable(!connectedToSensor);
+        buttonCalibrateVertical.setDisable(!connectedToSensor);
         setMouseConnectButtonState();
     }
 

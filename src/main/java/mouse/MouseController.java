@@ -48,7 +48,7 @@ public class MouseController implements SerialPortListener {
 
     private MouseState mouseHeadingState;
     private MouseState mouseVerticalState;
-    private boolean movingTheMouse = false;
+    private boolean movingTheMouse;
 
     public MouseController(RobotMouseThread robotMouseThread, long[] headingData, long[] verticalData) {
         this.movingTheMouse = false;
@@ -95,6 +95,7 @@ public class MouseController implements SerialPortListener {
         mouseVerticalState = MouseState.NULL_ZONE;
 
         mouseHeadingOffset = 0;
+        mouseVerticalOffset = 0;
         movingTheMouse = true;
     }
 
@@ -137,8 +138,12 @@ public class MouseController implements SerialPortListener {
             } else {
                 inActiveVerticalZone(diffLimitMin - maxVerticalWidth1);
             }
+        }else{
+            outsideVerticalZone(diffLimitMin - maxVerticalWidth1);
         }
     }
+
+
 
     private void processHeadingData(long heading) {
         Degrees d = new Degrees(heading);
@@ -151,7 +156,7 @@ public class MouseController implements SerialPortListener {
                 inActiveHeadingZone(diffLimitMax - maxHeadingWidth1);
             }
         } else {
-            inNullHeadingZone(mouseHeadingOffset);
+            outsideHeadingZone(diffLimitMax - maxHeadingWidth1);
         }
     }
 
@@ -254,39 +259,46 @@ public class MouseController implements SerialPortListener {
 
     private void inActiveHeadingZone(long heading) {
         mouseHeadingOffset = heading;
+        mouseHeadingState = MouseState.ACTIVE;
         if (movingTheMouse) {
-            mouseHeadingState = MouseState.ACTIVE;
-            robotMouseThread.setSpeedX(heading);
-        } else {
-            mouseHeadingState = MouseState.DISCONNECTED;
+            robotMouseThread.setSpeedX(-heading * 5);
         }
     }
 
     private void inNullHeadingZone(long heading) {
         mouseHeadingOffset = heading;
+        mouseHeadingState = MouseState.NULL_ZONE;
         if (movingTheMouse) {
-            mouseHeadingState = MouseState.NULL_ZONE;
-        } else {
-            mouseHeadingState = MouseState.DISCONNECTED;
+            robotMouseThread.setSpeedX(0);
         }
     }
 
     private void inNullVerticalZone(long l) {
         mouseVerticalOffset = l;
+        mouseVerticalState = MouseState.NULL_ZONE;
         if (movingTheMouse) {
-            mouseVerticalState = MouseState.NULL_ZONE;
-        } else {
-            mouseVerticalState = MouseState.DISCONNECTED;
+            robotMouseThread.setSpeedY(0);
         }
     }
 
     private void inActiveVerticalZone(long l) {
         mouseVerticalOffset = l;
+        mouseVerticalState = MouseState.ACTIVE;
         if (movingTheMouse) {
-            mouseVerticalState = MouseState.ACTIVE;
-        } else {
-            mouseVerticalState = MouseState.DISCONNECTED;
+            robotMouseThread.setSpeedY(l/2.0);
         }
+    }
+
+    private void outsideVerticalZone(long l) {
+        mouseVerticalOffset = l;
+        mouseVerticalState = MouseState.INACTIVE;
+
+    }
+
+    private void outsideHeadingZone(long l) {
+        mouseHeadingOffset = l;
+        mouseHeadingState = MouseState.INACTIVE;
+
     }
 
 }

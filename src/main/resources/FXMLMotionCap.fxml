@@ -21,7 +21,7 @@
                   <Button fx:id="buttonConnect" mnemonicParsing="false" onAction="#handleButtonConnect" text="Connect" />
                   <Label text="Calibration:" />
                   <Button fx:id="buttonCalibrateHeading" mnemonicParsing="false" onAction="#handleCalibrateHeading" text="Heading" />
-                  <Button fx:id="buttonCalibrateVertical" mnemonicParsing="false" onAction="#handleButtonCalibrateVertical" text="Up-Down" />
+                  <Button fx:id="buttonCalibrateVertical" mnemonicParsing="false" onAction="#handleButtonCalibrateVertical" text="Vertical" />
                   <Label text="Mouse Motion:" />
                   <Button fx:id="buttonMouseMotion" mnemonicParsing="false" onAction="#handleButtonMouseMotion" text="Start" />
                     </children>
