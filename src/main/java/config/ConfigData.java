@@ -21,9 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -45,6 +43,7 @@ public class ConfigData {
     These are public so any class can get the property names.
      */
     public static final String CALIB_HEADING_DATA = "calibrate.heading.data";
+    public static final String CALIB_VERTICAL_DATA = "calibrate.vertical.data";
     public static final String SETTINGS_FILE_KEY = "settings.file";
     public static final String DEFAULT_PORT_KEY = "default.port";
     public static final String DEFAULT_BAUD = "default.baud";

@@ -33,25 +33,55 @@ public class MouseController implements SerialPortListener {
     private final long minHeadingWidth1;
     private final long maxHeadingWidth2;
     private final long minHeadingWidth2;
-    private MouseHeadingState mouseHeadingState;
     private long mouseHeadingOffset;
+
+    private final long verticalMin;
+    private final long verticalMax;
+    private final long verticalLimitMin;
+    private final long verticalLimitMax;
+    private final long verticalOffset;
+    private final long maxVerticalWidth1;
+    private final long minVerticalWidth1;
+    private final long maxVerticalWidth2;
+    private final long minVerticalWidth2;
+    private long mouseVerticalOffset;
+
+    private MouseState mouseHeadingState;
+    private MouseState mouseVerticalState;
     private boolean movingTheMouse = false;
 
-    public MouseController(RobotMouseThread robotMouseThread, long[] headingData) {
-        movingTheMouse = false;
-        mouseHeadingState = MouseHeadingState.DISCONNECTED;
-        
-        minHeadingWidth1 = headingData[1];
-        maxHeadingWidth1 = headingData[2];
-        minHeadingWidth2 = minHeadingWidth1 * 2;
-        maxHeadingWidth2 = maxHeadingWidth1 * 2;
-
-        this.robotMouseThread = robotMouseThread;
+    public MouseController(RobotMouseThread robotMouseThread, long[] headingData, long[] verticalData) {
+        this.movingTheMouse = false;
+        this.mouseHeadingState = MouseState.DISCONNECTED;
+        this.mouseVerticalState = MouseState.DISCONNECTED;
+        /*
+        Set up the Heading (Horizontal) boundries
+         */
         this.headingOffset = new Degrees(headingData[0]);
+        this.minHeadingWidth1 = headingData[1];
+        this.maxHeadingWidth1 = headingData[2];
+        this.minHeadingWidth2 = minHeadingWidth1 * 2;
+        this.maxHeadingWidth2 = maxHeadingWidth1 * 2;
         this.headingMin = headingOffset.sub(minHeadingWidth1);
         this.headingMax = headingOffset.add(minHeadingWidth1);
         this.headingLimitMin = headingOffset.sub(maxHeadingWidth1);
         this.headingLimitMax = headingOffset.add(maxHeadingWidth1);
+
+        /*
+        Set up the Up/Down (Vertical) boundries
+         */
+        this.verticalOffset = verticalData[0];
+        this.minVerticalWidth1 = verticalData[1];
+        this.maxVerticalWidth1 = verticalData[2];
+        this.minVerticalWidth2 = minVerticalWidth1 * 2;
+        this.maxVerticalWidth2 = maxVerticalWidth1 * 2;
+        this.verticalMin = verticalOffset - minVerticalWidth1;
+        this.verticalMax = verticalOffset + minVerticalWidth1;
+        this.verticalLimitMin = verticalOffset - maxVerticalWidth1;
+        this.verticalLimitMax = verticalOffset + maxVerticalWidth1;
+
+        this.robotMouseThread = robotMouseThread;
+
     }
 
     /**
@@ -61,7 +91,9 @@ public class MouseController implements SerialPortListener {
      * from the SerialPortThread the mouse will be moved.
      */
     public final void startMovingTheMouse() {
-        mouseHeadingState = MouseHeadingState.NULL_ZONE;
+        mouseHeadingState = MouseState.NULL_ZONE;
+        mouseVerticalState = MouseState.NULL_ZONE;
+
         mouseHeadingOffset = 0;
         movingTheMouse = true;
     }
@@ -72,7 +104,8 @@ public class MouseController implements SerialPortListener {
     public final void stopMovingTheMouse() {
         movingTheMouse = false;
         robotMouseThread.stopMouse();
-        mouseHeadingState = MouseHeadingState.DISCONNECTED;
+        mouseHeadingState = MouseState.DISCONNECTED;
+        mouseVerticalState = MouseState.DISCONNECTED;
     }
 
     /**
@@ -90,18 +123,35 @@ public class MouseController implements SerialPortListener {
     @Override
     public void reading(Reading r) {
         if (r != null) {
-            Degrees d = new Degrees(r.getHeading());
-            long diffLimitMax = d.diffAntiClockwise(headingLimitMax);
-            long diffMax = d.diffAntiClockwise(headingMax);
-            if (diffLimitMax <= maxHeadingWidth2) {
-                if (diffMax < minHeadingWidth2) {
-                    inNullHeadingZone(diffMax - minHeadingWidth1);
-                } else {
-                    inActiveHeadingZone(diffLimitMax - maxHeadingWidth1);
-                }
+            processHeadingData(r.getHeading());
+            processVerticalData(Math.round(r.getY()));
+        }
+    }
+
+    private void processVerticalData(long y) {
+        long diffLimitMin = y - verticalLimitMin;
+        long diffMin = y - verticalMin;
+        if ((diffLimitMin > 0) && (diffLimitMin < maxVerticalWidth2)) {
+            if ((diffMin > 0) && (diffMin < minVerticalWidth2)) {
+                inNullVerticalZone(diffMin - minVerticalWidth1);
             } else {
-                inNullHeadingZone(mouseHeadingOffset);
+                inActiveVerticalZone(diffLimitMin - maxVerticalWidth1);
             }
+        }
+    }
+
+    private void processHeadingData(long heading) {
+        Degrees d = new Degrees(heading);
+        long diffLimitMax = d.diffAntiClockwise(headingLimitMax);
+        long diffMax = d.diffAntiClockwise(headingMax);
+        if (diffLimitMax <= maxHeadingWidth2) {
+            if (diffMax <= minHeadingWidth2) {
+                inNullHeadingZone(diffMax - minHeadingWidth1);
+            } else {
+                inActiveHeadingZone(diffLimitMax - maxHeadingWidth1);
+            }
+        } else {
+            inNullHeadingZone(mouseHeadingOffset);
         }
     }
 
@@ -154,6 +204,22 @@ public class MouseController implements SerialPortListener {
         return movingTheMouse;
     }
 
+    public long getVerticalMin() {
+        return verticalMin;
+    }
+
+    public long getVerticalMax() {
+        return verticalMax;
+    }
+
+    public long getVerticalLimitMin() {
+        return verticalLimitMin;
+    }
+
+    public long getVerticalLimitMax() {
+        return verticalLimitMax;
+    }
+
     public long getHeadingMin() {
         return headingMin.getDegrees();
     }
@@ -170,30 +236,57 @@ public class MouseController implements SerialPortListener {
         return headingLimitMax.getDegrees();
     }
 
-    public MouseHeadingState getMouseHeadingState() {
+    public MouseState getMouseHeadingState() {
         return mouseHeadingState;
+    }
+
+    public MouseState getMouseVerticalState() {
+        return mouseVerticalState;
     }
 
     public long getMouseHeadingOffset() {
         return mouseHeadingOffset;
     }
 
+    public long getMouseVerticalOffset() {
+        return mouseVerticalOffset;
+    }
+
     private void inActiveHeadingZone(long heading) {
         mouseHeadingOffset = heading;
         if (movingTheMouse) {
-            mouseHeadingState = MouseHeadingState.ACTIVE;
+            mouseHeadingState = MouseState.ACTIVE;
             robotMouseThread.setSpeedX(heading);
         } else {
-            mouseHeadingState = MouseHeadingState.DISCONNECTED;
+            mouseHeadingState = MouseState.DISCONNECTED;
         }
     }
 
     private void inNullHeadingZone(long heading) {
         mouseHeadingOffset = heading;
         if (movingTheMouse) {
-            mouseHeadingState = MouseHeadingState.NULL_ZONE;
+            mouseHeadingState = MouseState.NULL_ZONE;
         } else {
-            mouseHeadingState = MouseHeadingState.DISCONNECTED;
+            mouseHeadingState = MouseState.DISCONNECTED;
         }
     }
+
+    private void inNullVerticalZone(long l) {
+        mouseVerticalOffset = l;
+        if (movingTheMouse) {
+            mouseVerticalState = MouseState.NULL_ZONE;
+        } else {
+            mouseVerticalState = MouseState.DISCONNECTED;
+        }
+    }
+
+    private void inActiveVerticalZone(long l) {
+        mouseVerticalOffset = l;
+        if (movingTheMouse) {
+            mouseVerticalState = MouseState.ACTIVE;
+        } else {
+            mouseVerticalState = MouseState.DISCONNECTED;
+        }
+    }
+
 }

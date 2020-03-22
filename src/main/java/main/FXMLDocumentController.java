@@ -62,7 +62,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     /*
     A list (queue) of the last N readings. This is so we can plot the reading on the canvas
      */
-    private static Readings readings = new Readings(100);
+    private static Readings readings = new Readings(50);
 
     @FXML
     private ChoiceBox choiceBoxPortList;
@@ -191,6 +191,14 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         displayTimer.scheduleAtFixedRate(displayTimerTask, 1, 200);
     }
 
+    /**
+     * TimerTask is an instance of Runnable (has a run method). The run method
+     * is invoked by the JAVA FX Timer (displayTimer) started in the initialize
+     * method.
+     *
+     * Currently invoked every 200 MS
+     *
+     */
     TimerTask displayTimerTask = new TimerTask() {
         @Override
         public void run() {
@@ -203,7 +211,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                Given the size of the canvas. Calculate each X step and the origin line. Also the tick height.
                  */
                 double xStep = canvasWidth / (readings.capacity() - 1);
-                double tickHeight = canvasHeight / 50;
+                double tickHeight = canvasHeight / 80;
                 double yOrg = canvasHeight / 2; // Center of the canvas
                 double xOrg = canvasWidth / 2;  // Center of the canvas
                 double radius = Math.min(canvasHeight, canvasWidth) / 4;
@@ -216,13 +224,14 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                 /*
                 Init the canvas with a background colour and fill it!
                  */
-                canvasGraphics.setFont(new Font(20));
+
                 canvasGraphics.setFill(Color.AQUA);
                 canvasGraphics.fillRect(0, 0, canvasWidth, canvasHeight);
                 /*
                 Set the line width to 1. Draw a bounding box and origin line in black
                  */
                 canvasGraphics.setLineWidth(1);
+                canvasGraphics.setFont(new Font(15));
                 canvasGraphics.setStroke(Color.BLACK);
                 canvasGraphics.strokeRect(0, 0, canvasWidth, canvasHeight);
                 canvasGraphics.strokeLine(0, yOrg, canvasWidth, yOrg);
@@ -237,24 +246,37 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                     }
                 }
                 /*
+                Draw the vertical boundaries.
+                 */
+                drawVerticalLimitLine(yOrg, scaleY, Color.BLUE, Main.getMouseController().getVerticalMin(), "MIN:");
+                drawVerticalLimitLine(yOrg, scaleY, Color.BLUE, Main.getMouseController().getVerticalMax(), "MAX:");
+
+                drawVerticalLimitLine(yOrg, scaleY, Color.RED, Main.getMouseController().getVerticalLimitMin(), "MIN:");
+                drawVerticalLimitLine(yOrg, scaleY, Color.RED, Main.getMouseController().getVerticalLimitMax(), "MAX:");
+
+                /*
                     If there are ANY values in the readings
                  */
                 canvasGraphics.setLineWidth(2);
+                canvasGraphics.setFont(new Font(20));
+
                 if (readings.size() > 0) {
                     List<Reading> list = readings.readings();
-                    canvasGraphics.setStroke(Color.RED);
-                    xPos = -(xStep * 2);
-                    yPos = yOrg;
-                    yPosPrev = yPos;
-                    lastPlotReading = 0;
-                    for (Reading reading : list) {
-                        lastPlotReading = reading.getX();
-                        xPos = xPos + xStep;
-                        yPos = yOrg + (lastPlotReading * scaleY);
-                        canvasGraphics.strokeLine(xPos, yPosPrev, xPos + xStep, yPos);
-                        yPosPrev = yPos;
-                    }
-                    canvasGraphics.strokeText("" + lastPlotReading, xPos - 80, yPos - 7);
+                    
+//                    canvasGraphics.setStroke(Color.RED);
+//                    xPos = -(xStep * 2);
+//                    yPos = yOrg;
+//                    yPosPrev = yPos;
+//                    lastPlotReading = 0;
+//                    for (Reading reading : list) {
+//                        lastPlotReading = reading.getX();
+//                        xPos = xPos + xStep;
+//                        yPos = yOrg + (lastPlotReading * scaleY);
+//                        canvasGraphics.strokeLine(xPos, yPosPrev, xPos + xStep, yPos);
+//                        yPosPrev = yPos;
+//                    }
+//                    canvasGraphics.strokeText("" + lastPlotReading, xPos - 80, yPos - 7);
+
                     canvasGraphics.setStroke(Color.GREEN);
                     xPos = -(xStep * 2);
                     yPos = yOrg;
@@ -268,14 +290,15 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                         yPosPrev = yPos;
                     }
                     canvasGraphics.strokeText("" + lastPlotReading, xPos - 80, yPos + 20);
+                    canvasGraphics.strokeText("" + Main.getMouseController().getMouseVerticalOffset(), xPos - 80, yPos - 20);
                 }
                 Reading lastReading = readings.getLastReading();
                 if (lastReading != null) {
                     canvasGraphics.setStroke(Color.BLACK);
                     canvasGraphics.strokeOval(xOrg - radius, yOrg - radius, radius * 2, radius * 2);
                     drawClockHand(xOrg, yOrg, radius, 0, Color.YELLOW, 1, "North");
-                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMin(), Color.BLACK, 1, "Min:" + Main.getMouseController().getHeadingMin());
-                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMax(), Color.BLACK, 1, "Max:" + Main.getMouseController().getHeadingMax());
+                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMin(), Color.BLUE, 1, "Min:" + Main.getMouseController().getHeadingMin());
+                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMax(), Color.BLUE, 1, "Max:" + Main.getMouseController().getHeadingMax());
                     drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMin(), Color.RED, 1, "Min:" + Main.getMouseController().getHeadingLimitMin());
                     drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMax(), Color.RED, 1, "Max:" + Main.getMouseController().getHeadingLimitMax());
                     Color col;
@@ -308,6 +331,44 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         }
     };
 
+    /**
+     * This is a horizontal line marking a vertical limit
+     *
+     * @param yOrg Zero on the canvas
+     * @param scale Scale for display only
+     * @param colour The line colour
+     * @param line The line value
+     * @param marker The text to annotate the line with
+     */
+    public void drawVerticalLimitLine(double yOrg, double scale, Color colour, double line, String marker) {
+        canvasGraphics.setStroke(colour);
+        double d = yOrg + (line * scale);
+        canvasGraphics.strokeLine(110, d, canvasWidth - 110, d);
+        canvasGraphics.strokeText(marker + (long) line, 10, d + 5);
+    }
+
+    /**
+     * Draw a line on the 'clock face'
+     * @param xOrg The centre of the clock X
+     * @param yOrg The centre of the clock X
+     * @param radius The effective length of the line (from the centre
+     * @param degrees The angle (ZERO) is from centre vertcally UP.
+     * @param colour The colour of the line
+     * @param lineWidth The thickness of the line
+     * @param marker The Text to draw at the end of the line.
+     */
+    public void drawClockHand(double xOrg, double yOrg, double radius, long degrees, Color colour, double lineWidth, String marker) {
+        canvasGraphics.setLineWidth(lineWidth);
+        canvasGraphics.setStroke(colour);
+        double rr = (degrees + 90) * TO_RADIANS;
+        double yy = radius * Math.sin(rr);
+        double xx = radius * Math.cos(rr);
+        canvasGraphics.strokeLine(xOrg, yOrg, xOrg + xx, yOrg - yy);
+        yy = (radius + 30) * Math.sin(rr);
+        xx = (radius + 30) * Math.cos(rr);
+        canvasGraphics.strokeText(marker, (xOrg + xx) - 20, (yOrg - yy) + 10);
+    }
+
     public void alert(String message) {
         Platform.runLater(new Runnable() {
             @Override
@@ -317,18 +378,6 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                 alertOk("Mouse Movement Aborted", "Mouse is out of position.\nDid you move the mouse?", "Ok ot continue");
             }
         });
-    }
-
-    public void drawClockHand(double xOrg, double yOrg, double radius, long degrees, Color colour, double line, String marker) {
-        canvasGraphics.setLineWidth(line);
-        canvasGraphics.setStroke(colour);
-        double rr = (degrees + 90) * TO_RADIANS;
-        double yy = radius * Math.sin(rr);
-        double xx = radius * Math.cos(rr);
-        canvasGraphics.strokeLine(xOrg, yOrg, xOrg + xx, yOrg - yy);
-        yy = (radius + 30) * Math.sin(rr);
-        xx = (radius + 30) * Math.cos(rr);
-        canvasGraphics.strokeText(marker, (xOrg + xx) - 20, (yOrg - yy) + 10);
     }
 
     /**
@@ -436,7 +485,6 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         buttonMouseMotion.setDisable(disable);
     }
 
-    
     public static void alertOk(String ti, String txt, String ht) {
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle("Alert:" + ti);

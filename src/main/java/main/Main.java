@@ -202,7 +202,10 @@ public class Main extends Application {
     }
 
     public static void startMouseController() {
-        mouseController = new MouseController(robotMouseThread, ConfigData.getLongs(ConfigData.CALIB_HEADING_DATA, 3));
+        mouseController = new MouseController(robotMouseThread,
+                ConfigData.getLongs(ConfigData.CALIB_HEADING_DATA, 3),
+                ConfigData.getLongs(ConfigData.CALIB_VERTICAL_DATA, 3)
+        );
     }
 
     /**
@@ -230,11 +233,11 @@ public class Main extends Application {
         robotMouseThread = new RobotMouseThread(new RobotMouseEventListener() {
             @Override
             public void mouseNotInPosition(Point expected, Point actual, int count) {
-                if ((mouseController!= null) && (mouseController.isMovingTheMouse())) {
+                if ((mouseController != null) && (mouseController.isMovingTheMouse())) {
                     mouseController.stopMovingTheMouse();
                 }
                 if (guiController != null) {
-                    ((FXMLDocumentController)guiController).alert("Mouse is out of position ["+count+"]!");
+                    ((FXMLDocumentController) guiController).alert("Mouse is out of position [" + count + "]!");
                 }
             }
         }, getScreenRectangle());
