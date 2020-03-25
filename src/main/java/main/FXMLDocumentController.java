@@ -466,6 +466,9 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     private void initConnections() {
         choiceBoxPortList.setItems(FXCollections.observableArrayList(SerialMonitorThread.getPortList()));
         choiceBoxPortList.getSelectionModel().select(ConfigData.getDefaultPort());
+        if (choiceBoxPortList.getSelectionModel().getSelectedIndex() < 0) {
+            choiceBoxPortList.getSelectionModel().select(0);
+        }
         if (Main.getSerialMonitorThread() != null) {
             initConnectButtonState(Main.getSerialMonitorThread().isRunning(), Main.getSerialMonitorThread().getDevicePort(), Main.getSerialMonitorThread().getDeviceName());
         } else {

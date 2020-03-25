@@ -19,7 +19,6 @@ package main;
 
 import config.ConfigData;
 import config.ConfigException;
-import java.awt.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -35,6 +34,8 @@ import serial.Reading;
 import serial.SerialMonitorException;
 import serial.SerialMonitorThread;
 import serial.SerialPortListener;
+
+import java.awt.*;
 
 public class Main extends Application {
 
@@ -116,12 +117,12 @@ public class Main extends Application {
 
     /**
      * Connect to the sensor.
-     *
+     * <p>
      * If configuration data ConfigData.CONNECT_ON_LOAD is true then this is
      * called by the Main class. If configuration data
      * ConfigData.CONNECT_ON_LOAD is false then this is called by the GUI
      * Controller class when the connect button is pressed.
-     *
+     * <p>
      * It forwards messages to the GUI controller if it has been set up. It
      * forwards messages to the Mouse controller if it has been set up.
      */
@@ -193,7 +194,7 @@ public class Main extends Application {
                 /*
                 Otherwise we need to exit!
                  */
-                exitProgramWithHelp("Serial port monitor could not be started.", sme);
+                throw new SerialMonitorException("Could not connect to Serial port '" + port + "'");
             }
         }
         if (serialMonitorThread != null) {
@@ -225,7 +226,15 @@ public class Main extends Application {
         }
 
         if (ConfigData.getBoolean(ConfigData.CONNECT_ON_LOAD, true)) {
-            connectToSensor(ConfigData.getDefaultPort());
+            try {
+                connectToSensor(ConfigData.getDefaultPort());
+            } catch (SerialMonitorException e) {
+                if (ConfigData.getBoolean(ConfigData.LAUNCH_GUI, true)) {
+                    e.printStackTrace();
+                } else {
+                    exitProgramWithHelp("Failed to connect to Sensor", e);
+                }
+            }
         }
         /*
         Start the robot mouse thread and ad a listener for any events
@@ -238,6 +247,16 @@ public class Main extends Application {
                 }
                 if (guiController != null) {
                     ((FXMLDocumentController) guiController).alert("Mouse is out of position [" + count + "]!");
+                } else {
+                    for (int i = 5; i > 0; i--) {
+                        System.out.println("Mouse is out of position. Restarting in ["+i+"]");
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    mouseController.startMovingTheMouse();
                 }
             }
         }, getScreenRectangle());
@@ -259,6 +278,12 @@ public class Main extends Application {
         } else {
             if (serialMonitorThread == null) {
                 exitProgramWithHelp("If you dont load the GUI (" + ConfigData.LAUNCH_GUI + "=false) you MUST start the SerialMonitor on Load (" + ConfigData.CONNECT_ON_LOAD + "=true)", null);
+            }
+            /*
+            If running without GUI then start the mouse moving.
+             */
+            if (mouseController != null) {
+                mouseController.startMovingTheMouse();
             }
             /*
             Not running with the GUI so wait for the sensor thread to stop. 

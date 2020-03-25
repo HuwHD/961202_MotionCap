@@ -196,6 +196,7 @@ public class RobotMouseThread extends Thread {
                 time = (timeNow - lastTimeMoved) / (1000.0);
                 moveMouseRel(speedX * time, speedY * time);
                 lastTimeMoved = timeNow;
+                System.out.println(".");
             } else {
                 lastTimeMoved = System.currentTimeMillis();
             }

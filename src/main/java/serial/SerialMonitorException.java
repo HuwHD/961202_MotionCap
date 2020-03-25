@@ -17,9 +17,12 @@
  */
 package serial;
 
-public class SerialMonitorException extends Exception {
+public class SerialMonitorException extends RuntimeException {
     public SerialMonitorException(String message, Throwable cause) {
         super(message, cause);
     }
 
+    public SerialMonitorException(String message) {
+        super(message);
+    }
 }
