@@ -202,6 +202,11 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     }
 
     @Override
+    public void rawData(String s) {
+        // do nothing
+    }
+
+    @Override
     public void initialize(URL url, ResourceBundle rb) {
         initConnections();
         initTheCanvas();

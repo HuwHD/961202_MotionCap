@@ -134,9 +134,6 @@ public class Main extends Application {
             serialMonitorThread = new SerialMonitorThread(port, ConfigData.getDefaultBaud(), new SerialPortListener() {
                 @Override
                 public void reading(Reading reading) {
-                    if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
-                        System.out.println(reading);
-                    }
                     /*
                     The reading is passed to thw controller if one exists.
                      */
@@ -180,6 +177,13 @@ public class Main extends Application {
                     }
                     if (mouseController != null) {
                         mouseController.disConnected(devicePort, name);
+                    }
+                }
+
+                @Override
+                public void rawData(String s) {
+                    if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
+                        System.out.println(s);
                     }
                 }
 

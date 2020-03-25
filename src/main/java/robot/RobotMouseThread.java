@@ -183,7 +183,7 @@ public class RobotMouseThread extends Thread {
     }
 
     /**
-     * Sleep until we have a destination
+     * Sleep until we have a speed
      */
     @Override
     public void run() {
@@ -196,7 +196,6 @@ public class RobotMouseThread extends Thread {
                 time = (timeNow - lastTimeMoved) / (1000.0);
                 moveMouseRel(speedX * time, speedY * time);
                 lastTimeMoved = timeNow;
-                System.out.println(".");
             } else {
                 lastTimeMoved = System.currentTimeMillis();
             }

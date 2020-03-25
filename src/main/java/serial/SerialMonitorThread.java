@@ -104,13 +104,17 @@ public class SerialMonitorThread extends Thread {
             while (canRun) {
                 if (b == ':') {
                     if (serialPortListener != null) {
+                        String data = sb.toString();
+
+                        serialPortListener.rawData(data);
                         /*
                         Beware if you throw an exception in his method the SerialMonitior thread will terminate
                          */
-                        Reading reading = Reading.parse(sb.toString());
+                        Reading reading = Reading.parse(data);
                         if (reading != null) {
                             serialPortListener.reading(reading);
                         }
+
                     }
                     sb.setLength(0);
                 } else {
@@ -133,7 +137,6 @@ public class SerialMonitorThread extends Thread {
                 io.printStackTrace();
             }
         } finally {
-            System.out.println("FINALLY:" + canRun);
             /*
             Ensure serial port is freed!
              */
