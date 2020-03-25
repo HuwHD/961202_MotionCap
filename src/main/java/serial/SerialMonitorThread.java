@@ -103,16 +103,22 @@ public class SerialMonitorThread extends Thread {
             int b = portInStream.read();
             while (canRun) {
                 if (b == ':') {
+                     /*
+                    Beware if you throw an exception in his method the SerialMonitior thread will terminate
+                     */
                     if (serialPortListener != null) {
                         String data = sb.toString();
-
-                        serialPortListener.rawData(data);
                         /*
-                        Beware if you throw an exception in his method the SerialMonitior thread will terminate
+                        If raw data returns true then we are done. Dont call reading
                          */
-                        Reading reading = Reading.parse(data);
-                        if (reading != null) {
-                            serialPortListener.reading(reading);
+                        if (!serialPortListener.rawData(data)) {
+                            /*
+                            Parse the data and call reading
+                             */
+                            Reading reading = Reading.parse(data);
+                            if (reading != null) {
+                                serialPortListener.reading(reading);
+                            }
                         }
 
                     }

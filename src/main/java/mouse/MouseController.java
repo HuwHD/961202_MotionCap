@@ -206,8 +206,8 @@ public class MouseController implements SerialPortListener {
     }
 
     @Override
-    public void rawData(String s) {
-        // Do nothing
+    public boolean rawData(String s) {
+        return false;
     }
 
     public boolean isMovingTheMouse() {

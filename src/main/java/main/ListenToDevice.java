@@ -23,11 +23,12 @@ public class ListenToDevice {
         try {
             serialMonitorThread = new SerialMonitorThread(port, ConfigData.getDefaultBaud(), new SerialPortListener() {
                 @Override
-                public void rawData(String s) {
+                public boolean rawData(String s) {
                     System.out.println(port + ": " + s);
                     if ((s.endsWith("1,0")) || (s.endsWith("1,1"))){
                         canRun = false;
                     }
+                    return true;
                 }
 
                 @Override

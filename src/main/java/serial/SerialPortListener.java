@@ -22,5 +22,5 @@ public interface SerialPortListener {
     void fail(Exception e);
     void connected(String devicePort, int baud, String name);
     void disConnected(String devicePort, String name);
-    void rawData(String s);
+    boolean rawData(String s);
 }

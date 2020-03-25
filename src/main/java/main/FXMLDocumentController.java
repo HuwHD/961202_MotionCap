@@ -202,8 +202,8 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     }
 
     @Override
-    public void rawData(String s) {
-        // do nothing
+    public boolean rawData(String s) {
+        return false;
     }
 
     @Override

@@ -181,10 +181,11 @@ public class Main extends Application {
                 }
 
                 @Override
-                public void rawData(String s) {
+                public boolean rawData(String s) {
                     if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
                         System.out.println(s);
                     }
+                    return false;
                 }
 
             }, ConfigData.getValue(ConfigData.SENSOR_NAME, "Sensor"));
