@@ -25,7 +25,7 @@ public class ListenToDevice {
                 @Override
                 public boolean rawData(String s) {
                     System.out.println(port + ": " + s);
-                    if ((s.endsWith("1,0")) || (s.endsWith("1,1"))){
+                    if ((s.endsWith("1,0")) || (s.endsWith("1,1"))) {
                         canRun = false;
                     }
                     return true;
@@ -37,7 +37,7 @@ public class ListenToDevice {
 
                 @Override
                 public void fail(Exception e) {
-                     e.printStackTrace();
+                    e.printStackTrace();
                     canRun = false;
                 }
 
@@ -51,7 +51,7 @@ public class ListenToDevice {
                     System.out.println(port + ": " + "Dis-Connected:");
                     canRun = false;
                 }
-            }, ConfigData.getValue(ConfigData.SENSOR_NAME, "Sensor"));
+            }, ConfigData.getValue(ConfigData.SENSOR_NAME, "Sensor"),false);
         } catch (SerialMonitorException sme) {
             sme.printStackTrace();
             canRun = false;

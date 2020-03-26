@@ -143,10 +143,6 @@ public class Main extends Application {
                     if (mouseController != null) {
                         mouseController.reading(reading);
                     }
-                    if (reading.isB1()) {
-                        System.out.println("Button B1(A) was pressed");
-                        serialMonitorThread.close();
-                    }
                 }
 
                 @Override
@@ -188,7 +184,8 @@ public class Main extends Application {
                     return false;
                 }
 
-            }, ConfigData.getValue(ConfigData.SENSOR_NAME, "Sensor"));
+            }, ConfigData.getValue(ConfigData.SENSOR_NAME, "Sensor"),
+                    ConfigData.getBoolean(ConfigData.DEBUG_SENSOR_DATA, false));
         } catch (SerialMonitorException sme) {
             /*
             If the GUI is running jus display the error message

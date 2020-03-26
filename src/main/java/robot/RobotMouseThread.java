@@ -25,6 +25,10 @@ import java.awt.event.InputEvent;
  */
 public class RobotMouseThread extends Thread {
 
+    private enum ButtonState {
+        DOWN, IS_DOWN, UP, IS_UP
+    }
+
     private final static double MOUSE_NOT_IN_POSITION_TOLLERANCE = 20.0;
     private final static int MOUSE_NOT_IN_POSITION_REPEATS = 2;
 
@@ -45,8 +49,12 @@ public class RobotMouseThread extends Thread {
     private double mouseY;
     private boolean hasSpeed = false;
 
+    private ButtonState buttonLeftPressed;
+    private ButtonState buttonRightPressed;
+
+
     /**
-     * @param listener Listen to events caused by the robot mouse movement.
+     * @param listener     Listen to events caused by the robot mouse movement.
      * @param screenBounds The limits we can move the mouse
      */
     public RobotMouseThread(RobotMouseEventListener listener, Rectangle screenBounds) {
@@ -69,6 +77,8 @@ public class RobotMouseThread extends Thread {
         mouseX = p.x;
         mouseY = p.y;
         outOfPositionCounts = 0;
+        buttonLeftPressed = ButtonState.IS_UP;
+        buttonRightPressed = ButtonState.IS_UP;
     }
 
     public final void moveMouseAbs(double x, double y) {
@@ -139,22 +149,72 @@ public class RobotMouseThread extends Thread {
         canRun = false;
     }
 
-    /**
-     * Click and Release the LEFT mouse button
-     */
-    public void leftClick() {
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(10);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+    public boolean isLeftButtonPressed() {
+        return buttonLeftPressed.equals(ButtonState.IS_DOWN);
+    }
+
+    public boolean isRightButtonPressed() {
+        return buttonRightPressed.equals(ButtonState.IS_DOWN);
     }
 
     /**
-     * Click and Release the RIGHT mouse button
+     * Press the LEFT mouse button
+     *
+     * Note the actual call to the robot mouse api is done in the main thread (run method)
+     *
+     * ButtonState ensures that the call to the robot only occurs when the state changes.
      */
-    public void rightClick() {
-        robot.mousePress(InputEvent.BUTTON2_DOWN_MASK);
-        robot.delay(10);
-        robot.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
+    public void leftButtonPress() {
+        switch (buttonLeftPressed) {
+            case IS_UP:
+            case UP:
+                buttonLeftPressed = ButtonState.DOWN;
+        }
+    }
+
+    /**
+     * Release the LEFT mouse button
+     *
+     * Note the actual call to the robot mouse api is done in the main thread (run method)
+     *
+     * ButtonState ensures that the call to the robot only occurs when the state changes.
+     */
+    public void leftButtonRelease() {
+        switch (buttonLeftPressed) {
+            case IS_DOWN:
+            case DOWN:
+                buttonLeftPressed = ButtonState.UP;
+        }
+    }
+
+    /**
+     * Press the RIGHT mouse button
+     *
+     * Note the actual call to the robot mouse api is done in the main thread (run method)
+     *
+     * ButtonState ensures that the call to the robot only occurs when the state changes.
+     */
+    public void rightButtonPress() {
+        switch (buttonRightPressed) {
+            case IS_UP:
+            case UP:
+                buttonRightPressed = ButtonState.DOWN;
+        }
+    }
+
+    /**
+     * Release the RIGHT mouse button
+     *
+     * Note the actual call to the robot mouse api is done in the main thread (run method)
+     *
+     * ButtonState ensures that the call to the robot only occurs when the state changes.
+     */
+    public void rightButtonRelease() {
+        switch (buttonRightPressed) {
+            case IS_DOWN:
+            case DOWN:
+                buttonRightPressed = ButtonState.UP;
+        }
     }
 
     /**
@@ -199,6 +259,43 @@ public class RobotMouseThread extends Thread {
             } else {
                 lastTimeMoved = System.currentTimeMillis();
             }
+
+            /*
+            Press or release the LEFT button once when the it's state changes
+            State 1: IS_UP - The steady released state. No action required here.
+            State 2: DOWN - set by calling leftPress() above
+            State 3: IS_DOWN - Set after robot.mousePress is called.
+            ...
+            State 1: IS_DOWN - The steady pressed state. No action required here.
+            State 2: UP - set by calling leftRelease() above
+            State 3: IS_UP - Set after robot.mouseRelease is called.
+            ...
+             */
+            switch (buttonLeftPressed) {
+                case UP:
+                    robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                    buttonLeftPressed = ButtonState.IS_UP;
+                    break;
+                case DOWN:
+                    robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                    buttonLeftPressed = ButtonState.IS_DOWN;
+                    break;
+            }
+            /*
+            Press or release the RIGHT button once when the it's state changes
+            Same logic as LEFT button
+             */
+            switch (buttonRightPressed) {
+                case UP:
+                    robot.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
+                    buttonRightPressed = ButtonState.IS_UP;
+                    break;
+                case DOWN:
+                    robot.mousePress(InputEvent.BUTTON2_DOWN_MASK);
+                    buttonRightPressed = ButtonState.IS_DOWN;
+                    break;
+            }
+
             if (canRun) {
                 robot.delay(50);
             }

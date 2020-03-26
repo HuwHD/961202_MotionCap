@@ -239,6 +239,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                 double radius = Math.min(canvasHeight, canvasWidth) / 4;
                 double radius2 = Math.min(canvasHeight, canvasWidth) / 3;
                 double scaleY = canvasHeight / 3000;
+                double scale = canvasHeight / 1000;
                 double xPos;
                 double yPos;
                 double yPosPrev;
@@ -246,7 +247,6 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                 /*
                 Init the canvas with a background colour and fill it!
                  */
-
                 canvasGraphics.setFill(Color.AQUA);
                 canvasGraphics.fillRect(0, 0, canvasWidth, canvasHeight);
                 /*
@@ -285,20 +285,6 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                 if (readings.size() > 0) {
                     List<Reading> list = readings.readings();
                     
-//                    canvasGraphics.setStroke(Color.RED);
-//                    xPos = -(xStep * 2);
-//                    yPos = yOrg;
-//                    yPosPrev = yPos;
-//                    lastPlotReading = 0;
-//                    for (Reading reading : list) {
-//                        lastPlotReading = reading.getX();
-//                        xPos = xPos + xStep;
-//                        yPos = yOrg + (lastPlotReading * scaleY);
-//                        canvasGraphics.strokeLine(xPos, yPosPrev, xPos + xStep, yPos);
-//                        yPosPrev = yPos;
-//                    }
-//                    canvasGraphics.strokeText("" + lastPlotReading, xPos - 80, yPos - 7);
-
                     switch (Main.getMouseController().getMouseVerticalState()) {
                         case INACTIVE:
                             canvasGraphics.setStroke(Color.DARKGRAY);
@@ -361,12 +347,24 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                     }
                     drawClockHand(xOrg, yOrg, radius2, (long) lastReading.getHeading(), col, 2, displayHeading);
                 }
+                drawButton(50, 50, 100 * scale, Main.getMouseController().isLeftButtonPressed(), "B");
+                drawButton(canvasWidth-50, 50, 100 * scale, Main.getMouseController().isRightButtonPressed(), "A");
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
     };
 
+    public void drawButton(double x, double y, double size, boolean pressed, String marker) {
+        canvasGraphics.setStroke(Color.CYAN);
+        if (pressed) {
+            canvasGraphics.setFill(Color.GREEN);
+        } else {
+            canvasGraphics.setFill(Color.PINK);
+        }
+        canvasGraphics.fillOval(x-(size/2),y-(size/2),size,size);
+        canvasGraphics.strokeText(marker, x-(size/10), y+(size/8));
+    }
     /**
      * This is a horizontal line marking a vertical limit
      *

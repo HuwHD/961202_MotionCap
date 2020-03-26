@@ -73,8 +73,7 @@ public class Reading {
             boolean b2 = parseBool(values[SERIES_BUTTON_B]);
             return new Reading(x, y, ns, we, ud, h, b1, b2);
         } catch (Exception ex) {
-            System.err.println("Sensor reading exception [" + data + "] " + ex.getMessage());
-            return null;
+            throw new ReadingException(("Failed to read ["+data+"]"), ex);
         }
     }
 

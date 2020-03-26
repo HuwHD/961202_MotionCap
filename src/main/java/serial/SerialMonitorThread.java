@@ -35,6 +35,7 @@ public class SerialMonitorThread extends Thread {
     private final int deviceBaud;
     private boolean canRun = true;
     private boolean running = false;
+    private boolean debug = false;
 
     /**
      * Connect to the serial port
@@ -45,7 +46,8 @@ public class SerialMonitorThread extends Thread {
      * @param deviceName The (human readable) name of the port.
      * @throws serial.SerialMonitorException when connection fails.
      */
-    public SerialMonitorThread(String devicePort, int deviceBaud, SerialPortListener serialPortListener, String deviceName) throws SerialMonitorException {
+    public SerialMonitorThread(String devicePort, int deviceBaud, SerialPortListener serialPortListener, String deviceName, boolean debug) throws SerialMonitorException {
+        this.debug = debug;
         this.deviceName = deviceName;
         this.devicePort = devicePort;
         this.deviceBaud = deviceBaud;
@@ -94,6 +96,9 @@ public class SerialMonitorThread extends Thread {
 
     @Override
     public void run() {
+        if (debug) {
+            System.out.println("DEBUG SENSOR DATA");
+        }
         running = true;
         if (serialPortListener != null) {
             serialPortListener.connected(getDevicePort(), getDeviceBaud(), getDeviceName());
@@ -102,8 +107,14 @@ public class SerialMonitorThread extends Thread {
         try {
             int b = portInStream.read();
             while (canRun) {
+                if (debug) {
+                    System.out.print((char)b);;
+                }
                 if (b == ':') {
-                     /*
+                    if (debug) {
+                        System.out.println();;
+                    }
+                    /*
                     Beware if you throw an exception in his method the SerialMonitior thread will terminate
                      */
                     if (serialPortListener != null) {
@@ -115,9 +126,15 @@ public class SerialMonitorThread extends Thread {
                             /*
                             Parse the data and call reading
                              */
-                            Reading reading = Reading.parse(data);
-                            if (reading != null) {
-                                serialPortListener.reading(reading);
+                            try {
+                                Reading reading = Reading.parse(data);
+                                if (reading != null) {
+                                    serialPortListener.reading(reading);
+                                }
+                            } catch (Exception e) {
+                                if (debug) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
 

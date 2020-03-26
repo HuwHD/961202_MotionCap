@@ -42,6 +42,8 @@ public class ConfigData {
     
     These are public so any class can get the property names.
      */
+
+    public static final String DEBUG_SENSOR_DATA = "debug.sensordata";
     public static final String CALIB_HEADING_DATA = "calibrate.heading.data";
     public static final String CALIB_VERTICAL_DATA = "calibrate.vertical.data";
     public static final String SETTINGS_FILE_KEY = "settings.file";
