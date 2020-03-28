@@ -3,3 +3,4 @@
 /.gradle/
 /*.log
 /.idea/
+/settings.properties

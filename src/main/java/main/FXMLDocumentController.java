@@ -18,12 +18,6 @@
 package main;
 
 import config.ConfigData;
-import java.net.URL;
-import java.text.DecimalFormat;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.Timer;
-import java.util.TimerTask;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -47,6 +41,13 @@ import mouse.MouseController;
 import serial.Reading;
 import serial.SerialMonitorThread;
 import serial.SerialPortListener;
+
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * @author huw
@@ -117,7 +118,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     }
 
     @FXML
-    private void handleButtonCalibrateVertical(ActionEvent event){
+    private void handleButtonCalibrateVertical(ActionEvent event) {
         long[] verticalData = ConfigData.getLongs(ConfigData.CALIB_VERTICAL_DATA, 3);
         verticalData[0] = (long) readings.getLastReading().getY();
         ConfigData.set(ConfigData.CALIB_VERTICAL_DATA, String.format("%d,%d,%d", verticalData[0], verticalData[1], verticalData[2]));
@@ -127,7 +128,9 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                 Main.startMouseController();
             }
         });
-    };
+    }
+
+    ;
 
 
     @FXML
@@ -210,16 +213,15 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     public void initialize(URL url, ResourceBundle rb) {
         initConnections();
         initTheCanvas();
-        displayTimer.scheduleAtFixedRate(displayTimerTask, 1, 200);
+        displayTimer.scheduleAtFixedRate(displayTimerTask, 1, 333);
     }
 
     /**
      * TimerTask is an instance of Runnable (has a run method). The run method
      * is invoked by the JAVA FX Timer (displayTimer) started in the initialize
      * method.
-     *
+     * <p>
      * Currently invoked every 200 MS
-     *
      */
     TimerTask displayTimerTask = new TimerTask() {
         @Override
@@ -284,7 +286,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
 
                 if (readings.size() > 0) {
                     List<Reading> list = readings.readings();
-                    
+
                     switch (Main.getMouseController().getMouseVerticalState()) {
                         case INACTIVE:
                             canvasGraphics.setStroke(Color.DARKGRAY);
@@ -346,32 +348,43 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                             col = Color.RED;
                     }
                     drawClockHand(xOrg, yOrg, radius2, (long) lastReading.getHeading(), col, 2, displayHeading);
+                    drawButton(50, 50, 80 * scale, Main.getMouseController().isLeftButtonPressed(), lastReading.isB2S(), lastReading.isB2R(), "B");
+                    drawButton(canvasWidth - 50, 50, 80 * scale, Main.getMouseController().isRightButtonPressed(), lastReading.isB1S(), lastReading.isB1R(), "A");
                 }
-                drawButton(50, 50, 100 * scale, Main.getMouseController().isLeftButtonPressed(), "B");
-                drawButton(canvasWidth-50, 50, 100 * scale, Main.getMouseController().isRightButtonPressed(), "A");
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 ex.printStackTrace();
             }
         }
     };
 
-    public void drawButton(double x, double y, double size, boolean pressed, String marker) {
+    public void drawButton(double x, double y, double size, boolean mousePressed, boolean pressed1, boolean pressed2, String marker) {
         canvasGraphics.setStroke(Color.CYAN);
-        if (pressed) {
+        if (pressed2) {
+            canvasGraphics.setFill(Color.RED);
+            double pSize = size + 20;
+            canvasGraphics.fillOval(x - (pSize / 2), y - (pSize / 2), pSize, pSize);
+        }
+        if (pressed1) {
+            canvasGraphics.setFill(Color.BLUE);
+            double pSize = size + 10;
+            canvasGraphics.fillOval(x - (pSize / 2), y - (pSize / 2), pSize, pSize);
+        }
+        if (mousePressed) {
             canvasGraphics.setFill(Color.GREEN);
         } else {
             canvasGraphics.setFill(Color.PINK);
         }
-        canvasGraphics.fillOval(x-(size/2),y-(size/2),size,size);
-        canvasGraphics.strokeText(marker, x-(size/10), y+(size/8));
+        canvasGraphics.fillOval(x - (size / 2), y - (size / 2), size, size);
+        canvasGraphics.strokeText(marker, x - (size / 8), y + (size / 8));
     }
+
     /**
      * This is a horizontal line marking a vertical limit
      *
-     * @param yOrg Zero on the canvas
-     * @param scale Scale for display only
+     * @param yOrg   Zero on the canvas
+     * @param scale  Scale for display only
      * @param colour The line colour
-     * @param line The line value
+     * @param line   The line value
      * @param marker The text to annotate the line with
      */
     public void drawVerticalLimitLine(double yOrg, double scale, Color colour, double line, String marker) {
@@ -383,13 +396,14 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
 
     /**
      * Draw a line on the 'clock face'
-     * @param xOrg The centre of the clock X
-     * @param yOrg The centre of the clock X
-     * @param radius The effective length of the line (from the centre
-     * @param degrees The angle (ZERO) is from centre vertcally UP.
-     * @param colour The colour of the line
+     *
+     * @param xOrg      The centre of the clock X
+     * @param yOrg      The centre of the clock X
+     * @param radius    The effective length of the line (from the centre
+     * @param degrees   The angle (ZERO) is from centre vertcally UP.
+     * @param colour    The colour of the line
      * @param lineWidth The thickness of the line
-     * @param marker The Text to draw at the end of the line.
+     * @param marker    The Text to draw at the end of the line.
      */
     public void drawClockHand(double xOrg, double yOrg, double radius, long degrees, Color colour, double lineWidth, String marker) {
         canvasGraphics.setLineWidth(lineWidth);
@@ -418,10 +432,10 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
      * The canvas (graph plot) is contained inside connectionsAnchorPane.
      * statusAnchorPane has a height and a width property that can be listened
      * to. This method sets up the listeners.
-     *
+     * <p>
      * Not the canvas sits inside an Anchor Pane but this would only respond to
      * increases in size. Shrinking the window was ignored.
-     *
+     * <p>
      * Using statusAnchorPane worked but included the button bar
      * (buttonFlowPane) and Status panel (statusAnchorPane) so these sizes are
      * used to calculate the canvas size

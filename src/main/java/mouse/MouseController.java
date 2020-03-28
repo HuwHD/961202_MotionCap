@@ -136,12 +136,12 @@ public class MouseController implements SerialPortListener {
 
     private void processButtons(Reading r) {
         if (movingTheMouse) {
-            if (r.isB2()) {
+            if (r.isB2S()) {
                 robotMouseThread.leftButtonPress();
             } else {
                 robotMouseThread.leftButtonRelease();
             }
-            if (r.isB1()) {
+            if (r.isB1S()) {
                 robotMouseThread.rightButtonPress();
             } else {
                 robotMouseThread.rightButtonRelease();
