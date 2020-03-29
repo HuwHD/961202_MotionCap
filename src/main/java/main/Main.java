@@ -185,6 +185,7 @@ public class Main extends Application {
                 }
 
             }, ConfigData.getValue(ConfigData.SENSOR_NAME, "Sensor"),
+                    ConfigData.getBoolean(ConfigData.CALIB_SWAP_LR, false),
                     ConfigData.getBoolean(ConfigData.DEBUG_SENSOR_DATA, false));
         } catch (SerialMonitorException sme) {
             /*
@@ -251,7 +252,7 @@ public class Main extends Application {
                     ((FXMLDocumentController) guiController).alert("Mouse is out of position [" + count + "]!");
                 } else {
                     for (int i = 5; i > 0; i--) {
-                        System.out.println("Mouse is out of position. Restarting in ["+i+"]");
+                        System.out.println("Mouse is out of position. Restarting in [" + i + "]");
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {

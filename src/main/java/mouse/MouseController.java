@@ -49,7 +49,6 @@ public class MouseController implements SerialPortListener {
     private boolean buttonADown;
     private boolean buttonBDown;
 
-
     private MouseState mouseHeadingState;
     private MouseState mouseVerticalState;
     private boolean movingTheMouse;
@@ -163,7 +162,6 @@ public class MouseController implements SerialPortListener {
         }
     }
 
-
     private void processHeadingData(long heading) {
         Degrees d = new Degrees(heading);
         long diffLimitMax = d.diffAntiClockwise(headingLimitMax);
@@ -202,8 +200,8 @@ public class MouseController implements SerialPortListener {
      * mouse.
      *
      * @param devicePort The port
-     * @param baud       The port speed
-     * @param name       The port name
+     * @param baud The port speed
+     * @param name The port name
      */
     @Override
     public void connected(String devicePort, int baud, String name) {
@@ -217,7 +215,7 @@ public class MouseController implements SerialPortListener {
      * control back to the normal mouse
      *
      * @param devicePort The port
-     * @param name       The port name
+     * @param name The port name
      */
     @Override
     public void disConnected(String devicePort, String name) {
@@ -281,11 +279,14 @@ public class MouseController implements SerialPortListener {
         return mouseVerticalOffset;
     }
 
+    /*
+    (swapLR?1:-1) *
+     */
     private void inActiveHeadingZone(long heading) {
         mouseHeadingOffset = heading;
         mouseHeadingState = MouseState.ACTIVE;
         if (movingTheMouse) {
-            robotMouseThread.setSpeedX(-heading * 5);
+            robotMouseThread.setSpeedX((heading * 5));
         }
     }
 
@@ -323,7 +324,6 @@ public class MouseController implements SerialPortListener {
         mouseHeadingState = MouseState.INACTIVE;
     }
 
-
     public boolean isLeftButtonPressed() {
         return robotMouseThread.isLeftButtonPressed();
     }
@@ -331,5 +331,4 @@ public class MouseController implements SerialPortListener {
     public boolean isRightButtonPressed() {
         return robotMouseThread.isRightButtonPressed();
     }
-
 }

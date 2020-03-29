@@ -35,6 +35,7 @@ public class SerialMonitorThread extends Thread {
     private final int deviceBaud;
     private boolean canRun = true;
     private boolean running = false;
+    private boolean swapLR = false;
     private boolean debug = false;
 
     /**
@@ -46,8 +47,9 @@ public class SerialMonitorThread extends Thread {
      * @param deviceName The (human readable) name of the port.
      * @throws serial.SerialMonitorException when connection fails.
      */
-    public SerialMonitorThread(String devicePort, int deviceBaud, SerialPortListener serialPortListener, String deviceName, boolean debug) throws SerialMonitorException {
+    public SerialMonitorThread(String devicePort, int deviceBaud, SerialPortListener serialPortListener, String deviceName, boolean swapLR, boolean debug) throws SerialMonitorException {
         this.debug = debug;
+        this.swapLR = swapLR;
         this.deviceName = deviceName;
         this.devicePort = devicePort;
         this.deviceBaud = deviceBaud;
@@ -127,7 +129,7 @@ public class SerialMonitorThread extends Thread {
                             Parse the data and call reading
                              */
                             try {
-                                Reading reading = Reading.parse(data);
+                                Reading reading = Reading.parse(data,swapLR);
                                 if (reading != null) {
                                     serialPortListener.reading(reading);
                                 }
@@ -211,6 +213,11 @@ public class SerialMonitorThread extends Thread {
         return portList;
     }
 
+    public boolean swapLR() {
+        this.swapLR = !swapLR;
+        return this.swapLR;
+    }
+    
     public boolean isRunning() {
         return running;
     }

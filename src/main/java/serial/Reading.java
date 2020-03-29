@@ -50,7 +50,7 @@ public class Reading {
     private final boolean b2R;
     private final long timestamp;
 
-    public static Reading parse(String data) {
+    public static Reading parse(String data, boolean swapLR) {
         if (data == null) {
             return null;
         }
@@ -67,7 +67,11 @@ public class Reading {
             boolean b2S = parseBool(values[SERIES_BUTTON_BS]);
             boolean b1R = parseBool(values[SERIES_BUTTON_AR]);
             boolean b2R = parseBool(values[SERIES_BUTTON_BR]);
-            return new Reading(x, y, h, b1S, b2S, b1R, b2R);
+            if (swapLR) {
+                return new Reading(x, y, h, b1S, b2S, b1R, b2R);
+            } else {
+                return new Reading(x, -y, -h, b2S, b1S, b1R, b2R);
+            }
         } catch (Exception ex) {
             throw new ReadingException(("Failed to read ["+data+"]"), ex);
         }

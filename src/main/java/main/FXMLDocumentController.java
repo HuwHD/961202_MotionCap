@@ -60,6 +60,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     private boolean connectedToSensor;
     private double canvasWidth;
     private double canvasHeight;
+    private long timeLastDrawn =0;
     /*
     A list (queue) of the last N readings. This is so we can plot the reading on the canvas
      */
@@ -78,12 +79,15 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     private Button buttonCalibrateVertical;
 
     @FXML
+    private Button buttonSwapLR;
+
+    @FXML
     private Button buttonCalibrateHeading;
 
     @FXML
     private Canvas mainCanvas;
     /*
-    Needed so we can calculate the height of the canvas when the mainBorderPane changes size
+    Needed so we can alculate the height of the canvas when the mainBorderPane changes size
      */
     @FXML
     private AnchorPane statusAnchorPane;
@@ -115,6 +119,13 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     @FXML
     private void handleButtonFinish(ActionEvent event) {
         Main.closeApplication(0);
+    }
+
+    @FXML
+    private void handleButtonSwapLR(ActionEvent event) {
+        boolean swap = Main.getSerialMonitorThread().swapLR();
+        ConfigData.set(ConfigData.CALIB_SWAP_LR, String.valueOf(swap));
+        buttonSwapLR.setText("<- Swap " + (swap?"ON ":"OFF") + " ->");
     }
 
     @FXML
@@ -159,6 +170,9 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
 
     @Override
     public void reading(Reading reading) {
+        if ((System.currentTimeMillis() - timeLastDrawn) > 1000) {
+            System.out.println("DELAY");
+        }
         /*
         Add the reading to the list of readings.
          */
@@ -213,6 +227,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     public void initialize(URL url, ResourceBundle rb) {
         initConnections();
         initTheCanvas();
+        buttonSwapLR.setText("<- Swap " + (ConfigData.getBoolean(ConfigData.CALIB_SWAP_LR)?"ON ":"OFF") + " ->");
         displayTimer.scheduleAtFixedRate(displayTimerTask, 1, 333);
     }
 
@@ -350,6 +365,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                     drawClockHand(xOrg, yOrg, radius2, (long) lastReading.getHeading(), col, 2, displayHeading);
                     drawButton(50, 50, 80 * scale, Main.getMouseController().isLeftButtonPressed(), lastReading.isB2S(), lastReading.isB2R(), "B");
                     drawButton(canvasWidth - 50, 50, 80 * scale, Main.getMouseController().isRightButtonPressed(), lastReading.isB1S(), lastReading.isB1R(), "A");
+                timeLastDrawn = System.currentTimeMillis();
                 }
             } catch (Throwable ex) {
                 ex.printStackTrace();
@@ -381,10 +397,10 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     /**
      * This is a horizontal line marking a vertical limit
      *
-     * @param yOrg   Zero on the canvas
-     * @param scale  Scale for display only
+     * @param yOrg Zero on the canvas
+     * @param scale Scale for display only
      * @param colour The line colour
-     * @param line   The line value
+     * @param line The line value
      * @param marker The text to annotate the line with
      */
     public void drawVerticalLimitLine(double yOrg, double scale, Color colour, double line, String marker) {
@@ -397,13 +413,13 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     /**
      * Draw a line on the 'clock face'
      *
-     * @param xOrg      The centre of the clock X
-     * @param yOrg      The centre of the clock X
-     * @param radius    The effective length of the line (from the centre
-     * @param degrees   The angle (ZERO) is from centre vertcally UP.
-     * @param colour    The colour of the line
+     * @param xOrg The centre of the clock X
+     * @param yOrg The centre of the clock X
+     * @param radius The effective length of the line (from the centre
+     * @param degrees The angle (ZERO) is from centre vertcally UP.
+     * @param colour The colour of the line
      * @param lineWidth The thickness of the line
-     * @param marker    The Text to draw at the end of the line.
+     * @param marker The Text to draw at the end of the line.
      */
     public void drawClockHand(double xOrg, double yOrg, double radius, long degrees, Color colour, double lineWidth, String marker) {
         canvasGraphics.setLineWidth(lineWidth);
