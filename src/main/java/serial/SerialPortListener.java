@@ -20,7 +20,7 @@ package serial;
 public interface SerialPortListener {
     void reading(Reading s);
     void fail(Exception e);
-    void connected(String devicePort, int baud, String name);
-    void disConnected(String devicePort, String name);
+    void connectedSensor(String devicePort, int baud, String name);
+    void disConnectedSensor(String devicePort, String name);
     boolean rawData(String s);
 }

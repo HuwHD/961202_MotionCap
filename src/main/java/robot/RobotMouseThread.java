@@ -22,6 +22,7 @@ import java.awt.event.InputEvent;
 
 /**
  * Move the mouse in the background.
+ * 
  */
 public class RobotMouseThread extends Thread {
 
@@ -32,7 +33,7 @@ public class RobotMouseThread extends Thread {
     private final static double MOUSE_NOT_IN_POSITION_TOLLERANCE = 20.0;
     private final static int MOUSE_NOT_IN_POSITION_REPEATS = 2;
 
-    private final Robot robot;
+    private final Robot robotMouse;
     private final RobotMouseEventListener listener;
     private final Rectangle screenBounds;
 
@@ -48,20 +49,19 @@ public class RobotMouseThread extends Thread {
     private double mouseX;
     private double mouseY;
     private boolean hasSpeed = false;
-
+    private boolean connected = false;
     private ButtonState buttonLeftPressed;
     private ButtonState buttonRightPressed;
 
-
     /**
-     * @param listener     Listen to events caused by the robot mouse movement.
+     * @param listener Listen to events caused by the robot mouse movement.
      * @param screenBounds The limits we can move the mouse
      */
     public RobotMouseThread(RobotMouseEventListener listener, Rectangle screenBounds) {
         try {
-            this.robot = new Robot();
-            this.robot.setAutoDelay(0);
-            this.robot.setAutoWaitForIdle(false);
+            this.robotMouse = new Robot();
+            this.robotMouse.setAutoDelay(0);
+            this.robotMouse.setAutoWaitForIdle(false);
         } catch (AWTException awt) {
             throw new RobotMouseException("Mouse Robot creation failed:", awt);
         }
@@ -107,7 +107,9 @@ public class RobotMouseThread extends Thread {
         }
         mouseX = x;
         mouseY = y;
-        robot.mouseMove((int) x, (int) y);
+        if (connected) {
+            robotMouse.mouseMove((int) x, (int) y);
+        }
     }
 
     public static boolean roughlyNotEqual(double a, double b, double tollerance) {
@@ -120,7 +122,7 @@ public class RobotMouseThread extends Thread {
     }
 
     public void delay(int ms) {
-        robot.delay(ms);
+        robotMouse.delay(ms);
     }
 
     public void setSpeedY(double y) {
@@ -140,7 +142,25 @@ public class RobotMouseThread extends Thread {
     public double getSpeedX() {
         return speedX;
     }
-
+    
+    public boolean isConnected() {
+        return connected;
+    }
+    
+    public void disConnect() {
+        this.connected = false;
+        stopMouse();
+        if (listener!=null) {
+            listener.disConnectedMouse();
+        }
+    }
+    
+    public void connect() {
+        this.connected = true;
+        if (listener!=null) {
+            listener.connectedMouse();
+        }
+    }
     /**
      * Stop the thread and any mouse movement
      */
@@ -160,9 +180,11 @@ public class RobotMouseThread extends Thread {
     /**
      * Press the LEFT mouse button
      *
-     * Note the actual call to the robot mouse api is done in the main thread (run method)
+     * Note the actual call to the robot mouse api is done in the main thread
+     * (run method)
      *
-     * ButtonState ensures that the call to the robot only occurs when the state changes.
+     * ButtonState ensures that the call to the robot only occurs when the state
+     * changes.
      */
     public void leftButtonPress() {
         switch (buttonLeftPressed) {
@@ -175,9 +197,11 @@ public class RobotMouseThread extends Thread {
     /**
      * Release the LEFT mouse button
      *
-     * Note the actual call to the robot mouse api is done in the main thread (run method)
+     * Note the actual call to the robot mouse api is done in the main thread
+     * (run method)
      *
-     * ButtonState ensures that the call to the robot only occurs when the state changes.
+     * ButtonState ensures that the call to the robot only occurs when the state
+     * changes.
      */
     public void leftButtonRelease() {
         switch (buttonLeftPressed) {
@@ -190,9 +214,11 @@ public class RobotMouseThread extends Thread {
     /**
      * Press the RIGHT mouse button
      *
-     * Note the actual call to the robot mouse api is done in the main thread (run method)
+     * Note the actual call to the robot mouse api is done in the main thread
+     * (run method)
      *
-     * ButtonState ensures that the call to the robot only occurs when the state changes.
+     * ButtonState ensures that the call to the robot only occurs when the state
+     * changes.
      */
     public void rightButtonPress() {
         switch (buttonRightPressed) {
@@ -205,9 +231,11 @@ public class RobotMouseThread extends Thread {
     /**
      * Release the RIGHT mouse button
      *
-     * Note the actual call to the robot mouse api is done in the main thread (run method)
+     * Note the actual call to the robot mouse api is done in the main thread
+     * (run method)
      *
-     * ButtonState ensures that the call to the robot only occurs when the state changes.
+     * ButtonState ensures that the call to the robot only occurs when the state
+     * changes.
      */
     public void rightButtonRelease() {
         switch (buttonRightPressed) {
@@ -223,9 +251,11 @@ public class RobotMouseThread extends Thread {
      * @param i the int value if the key to be typed
      */
     public void type(int i) {
-        robot.delay(40);
-        robot.keyPress(i);
-        robot.keyRelease(i);
+        if (connected) {
+            robotMouse.delay(40);
+            robotMouse.keyPress(i);
+            robotMouse.keyRelease(i);
+        }
     }
 
     public void type(String s) {
@@ -236,9 +266,7 @@ public class RobotMouseThread extends Thread {
             if (code > 96 && code < 123) {
                 code = code - 32;
             }
-            robot.delay(40);
-            robot.keyPress(code);
-            robot.keyRelease(code);
+            type(code);
         }
     }
 
@@ -259,7 +287,6 @@ public class RobotMouseThread extends Thread {
             } else {
                 lastTimeMoved = System.currentTimeMillis();
             }
-
             /*
             Press or release the LEFT button once when the it's state changes
             State 1: IS_UP - The steady released state. No action required here.
@@ -271,33 +298,34 @@ public class RobotMouseThread extends Thread {
             State 3: IS_UP - Set after robot.mouseRelease is called.
             ...
              */
-            switch (buttonLeftPressed) {
-                case UP:
-                    robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-                    buttonLeftPressed = ButtonState.IS_UP;
-                    break;
-                case DOWN:
-                    robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                    buttonLeftPressed = ButtonState.IS_DOWN;
-                    break;
-            }
-            /*
+            if (connected) {
+                switch (buttonLeftPressed) {
+                    case UP:
+                        robotMouse.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                        buttonLeftPressed = ButtonState.IS_UP;
+                        break;
+                    case DOWN:
+                        robotMouse.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                        buttonLeftPressed = ButtonState.IS_DOWN;
+                        break;
+                }
+                /*
             Press or release the RIGHT button once when the it's state changes
             Same logic as LEFT button
-             */
-            switch (buttonRightPressed) {
-                case UP:
-                    robot.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
-                    buttonRightPressed = ButtonState.IS_UP;
-                    break;
-                case DOWN:
-                    robot.mousePress(InputEvent.BUTTON2_DOWN_MASK);
-                    buttonRightPressed = ButtonState.IS_DOWN;
-                    break;
+                 */
+                switch (buttonRightPressed) {
+                    case UP:
+                        robotMouse.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+                        buttonRightPressed = ButtonState.IS_UP;
+                        break;
+                    case DOWN:
+                        robotMouse.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+                        buttonRightPressed = ButtonState.IS_DOWN;
+                        break;
+                }
             }
-
             if (canRun) {
-                robot.delay(50);
+                robotMouse.delay(30);
             }
         }
     }

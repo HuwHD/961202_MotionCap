@@ -56,20 +56,43 @@ public class SerialMonitorThread extends Thread {
         try {
             serialPort = (SerialPort) CommPortIdentifier.getPortIdentifier(devicePort).open("abc", 0);
         } catch (NoSuchPortException ex) {
+            if (debug) {
+                ex.printStackTrace();
+            }
             throw new SerialMonitorException("Port not found: port[" + devicePort + "] baud[" + deviceBaud + "] name[" + deviceName + "]. Available ports are: " + getPortListAsString(), ex);
         } catch (PortInUseException ex) {
+            if (debug) {
+                ex.printStackTrace();
+            }
             throw new SerialMonitorException("Port is already open: port[" + devicePort + "] baud[" + deviceBaud + "] name[" + deviceName + "]", ex);
         }
         try {
             serialPort.setSerialPortParams(deviceBaud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
             serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
         } catch (UnsupportedCommOperationException ex) {
+            if (debug) {
+                ex.printStackTrace();
+            }
             throw new SerialMonitorException("Failed to configure port[" + devicePort + "] baud[" + deviceBaud + "] name[" + deviceName + "]", ex);
+        }
+        try {
+            serialPort.enableReceiveTimeout(100);
+        } catch (UnsupportedCommOperationException ex) {
+            if (debug) {
+                ex.printStackTrace();
+            }
+            throw new SerialMonitorException("Cannot set the timeout for port[" + devicePort + "] baud[" + deviceBaud + "] name[" + deviceName + "]", ex);
         }
         try {
             portInStream = serialPort.getInputStream();
         } catch (IOException ex) {
+            if (debug) {
+                ex.printStackTrace();
+            }
             throw new SerialMonitorException("Failed connect to port[" + devicePort + "] baud[" + deviceBaud + "] name[" + deviceName + "]", ex);
+        }
+        if (debug) {
+            System.out.println("Serial port " + devicePort + " connected");
         }
         this.serialPortListener = serialPortListener;
     }
@@ -99,22 +122,22 @@ public class SerialMonitorThread extends Thread {
     @Override
     public void run() {
         if (debug) {
-            System.out.println("DEBUG SENSOR DATA");
+            System.out.println("Serial port " + devicePort + " STARTED");
         }
         running = true;
         if (serialPortListener != null) {
-            serialPortListener.connected(getDevicePort(), getDeviceBaud(), getDeviceName());
+            serialPortListener.connectedSensor(getDevicePort(), getDeviceBaud(), getDeviceName());
         }
         StringBuilder sb = new StringBuilder();
         try {
             int b = portInStream.read();
             while (canRun) {
                 if (debug) {
-                    System.out.print((char)b);;
+                    System.out.print((char) b);
                 }
                 if (b == ':') {
                     if (debug) {
-                        System.out.println();;
+                        System.out.println();
                     }
                     /*
                     Beware if you throw an exception in his method the SerialMonitior thread will terminate
@@ -129,7 +152,7 @@ public class SerialMonitorThread extends Thread {
                             Parse the data and call reading
                              */
                             try {
-                                Reading reading = Reading.parse(data,swapLR);
+                                Reading reading = Reading.parse(data, swapLR);
                                 if (reading != null) {
                                     serialPortListener.reading(reading);
                                 }
@@ -150,7 +173,9 @@ public class SerialMonitorThread extends Thread {
                 }
             }
         } catch (Exception io) {
-            io.printStackTrace();
+            if (debug) {
+                io.printStackTrace();
+            }
             /*
             If an error occured here we cannot do a lot about it so
             we notify the action listener. Perhaps it can do somthing!
@@ -168,9 +193,13 @@ public class SerialMonitorThread extends Thread {
             if (serialPort != null) {
                 serialPort.close();
             }
+            if (debug) {
+                System.out.println("Serial port " + devicePort + " CLOSED");
+            }
+
             running = false;
             if (serialPortListener != null) {
-                serialPortListener.disConnected(getDevicePort(), getDeviceName());
+                serialPortListener.disConnectedSensor(getDevicePort(), getDeviceName());
             }
 
         }
@@ -213,11 +242,15 @@ public class SerialMonitorThread extends Thread {
         return portList;
     }
 
+    public boolean isSwapLR() {
+        return swapLR;
+    }
+
     public boolean swapLR() {
         this.swapLR = !swapLR;
         return this.swapLR;
     }
-    
+
     public boolean isRunning() {
         return running;
     }

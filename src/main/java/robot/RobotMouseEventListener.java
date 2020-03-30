@@ -24,4 +24,6 @@ import java.awt.*;
  */
 public interface RobotMouseEventListener {
     void mouseNotInPosition(Point expected, Point actual, int count);
+    void connectedMouse();
+    void disConnectedMouse();
 }

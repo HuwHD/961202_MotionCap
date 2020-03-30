@@ -51,10 +51,8 @@ public class MouseController implements SerialPortListener {
 
     private MouseState mouseHeadingState;
     private MouseState mouseVerticalState;
-    private boolean movingTheMouse;
 
     public MouseController(RobotMouseThread robotMouseThread, long[] headingData, long[] verticalData) {
-        this.movingTheMouse = false;
         this.mouseHeadingState = MouseState.DISCONNECTED;
         this.mouseVerticalState = MouseState.DISCONNECTED;
         /*
@@ -69,7 +67,6 @@ public class MouseController implements SerialPortListener {
         this.headingMax = headingOffset.add(minHeadingWidth1);
         this.headingLimitMin = headingOffset.sub(maxHeadingWidth1);
         this.headingLimitMax = headingOffset.add(maxHeadingWidth1);
-
         /*
         Set up the Up/Down (Vertical) boundries
          */
@@ -93,21 +90,19 @@ public class MouseController implements SerialPortListener {
      * Setting movingTheMouse = true will mean that when a reading is received
      * from the SerialPortThread the mouse will be moved.
      */
-    public final void startMovingTheMouse() {
+    public final void connectTheMouse() {
         mouseHeadingState = MouseState.NULL_ZONE;
         mouseVerticalState = MouseState.NULL_ZONE;
-
         mouseHeadingOffset = 0;
         mouseVerticalOffset = 0;
-        movingTheMouse = true;
+        robotMouseThread.connect();
     }
 
     /**
      * stop moving the mouse and hand control back to the normal mouse
      */
-    public final void stopMovingTheMouse() {
-        movingTheMouse = false;
-        robotMouseThread.stopMouse();
+    public final void disConnectTheMouse() {
+        robotMouseThread.disConnect();
         mouseHeadingState = MouseState.DISCONNECTED;
         mouseVerticalState = MouseState.DISCONNECTED;
     }
@@ -129,12 +124,12 @@ public class MouseController implements SerialPortListener {
         if (r != null) {
             processHeadingData(r.getHeading());
             processVerticalData(Math.round(r.getY()));
-            processButtons(r);
+            processSensorButtons(r);
         }
     }
 
-    private void processButtons(Reading r) {
-        if (movingTheMouse) {
+    private void processSensorButtons(Reading r) {
+        if (robotMouseThread.isConnected()) {
             if (r.isB2S()) {
                 robotMouseThread.leftButtonPress();
             } else {
@@ -188,7 +183,7 @@ public class MouseController implements SerialPortListener {
      */
     @Override
     public void fail(Exception e) {
-        stopMovingTheMouse();
+        disConnectTheMouse();
     }
 
     /**
@@ -204,7 +199,7 @@ public class MouseController implements SerialPortListener {
      * @param name The port name
      */
     @Override
-    public void connected(String devicePort, int baud, String name) {
+    public void connectedSensor(String devicePort, int baud, String name) {
     }
 
     /**
@@ -218,8 +213,8 @@ public class MouseController implements SerialPortListener {
      * @param name The port name
      */
     @Override
-    public void disConnected(String devicePort, String name) {
-        stopMovingTheMouse();
+    public void disConnectedSensor(String devicePort, String name) {
+        disConnectTheMouse();
     }
 
     @Override
@@ -227,8 +222,8 @@ public class MouseController implements SerialPortListener {
         return false;
     }
 
-    public boolean isMovingTheMouse() {
-        return movingTheMouse;
+    public boolean isConnectedToMouse() {
+        return robotMouseThread.isConnected();
     }
 
     public long getVerticalMin() {
@@ -285,15 +280,15 @@ public class MouseController implements SerialPortListener {
     private void inActiveHeadingZone(long heading) {
         mouseHeadingOffset = heading;
         mouseHeadingState = MouseState.ACTIVE;
-        if (movingTheMouse) {
-            robotMouseThread.setSpeedX((heading * 5));
+        if (robotMouseThread.isConnected()) {
+            robotMouseThread.setSpeedX(-(heading * 5));
         }
     }
 
     private void inNullHeadingZone(long heading) {
         mouseHeadingOffset = heading;
         mouseHeadingState = MouseState.NULL_ZONE;
-        if (movingTheMouse) {
+        if (robotMouseThread.isConnected()) {
             robotMouseThread.setSpeedX(0);
         }
     }
@@ -301,7 +296,7 @@ public class MouseController implements SerialPortListener {
     private void inNullVerticalZone(long l) {
         mouseVerticalOffset = l;
         mouseVerticalState = MouseState.NULL_ZONE;
-        if (movingTheMouse) {
+        if (robotMouseThread.isConnected()) {
             robotMouseThread.setSpeedY(0);
         }
     }
@@ -309,7 +304,7 @@ public class MouseController implements SerialPortListener {
     private void inActiveVerticalZone(long l) {
         mouseVerticalOffset = l;
         mouseVerticalState = MouseState.ACTIVE;
-        if (movingTheMouse) {
+        if (robotMouseThread.isConnected()) {
             robotMouseThread.setSpeedY(l / 2.0);
         }
     }

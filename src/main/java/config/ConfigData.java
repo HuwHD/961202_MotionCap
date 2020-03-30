@@ -47,15 +47,12 @@ public class ConfigData {
     public static final String CALIB_HEADING_DATA = "calibrate.heading.data";
     public static final String CALIB_VERTICAL_DATA = "calibrate.vertical.data";
     public static final String SETTINGS_FILE_KEY = "settings.file";
-    public static final String DEFAULT_PORT_KEY = "default.port";
+    public static final String DEFAULT_PORT = "default.port";
     public static final String DEFAULT_BAUD = "default.baud";
-    public static final String CLICK_DELAY_KEY = "delay.ms.click";
-    public static final String TYPE_DELAY_KEY = "delay.ms.type";
-    public static final String MOVE_DELAY_KEY = "delay.ms.move";
+
     public static final String CONNECT_ON_LOAD = "connectOnLoad";
     public static final String SENSOR_NAME = "sensorName";
     public static final String LAUNCH_GUI = "launchGUI";
-    public static final String SENSOR_TO_CONSOLE = "sendSensorReadingsToConsole";
 
     Map<String, String> sm = new HashMap<>();
 
@@ -338,7 +335,6 @@ public class ConfigData {
         } catch (IOException ex) {
             throw new ConfigException("Failed to  load file [" + sf.getAbsolutePath() + "]", ex);
         }
-
     }
 
     /**
@@ -356,47 +352,11 @@ public class ConfigData {
      * @return the port
      */
     public static String getDefaultPort() {
-        return getValue(DEFAULT_PORT_KEY);
+        return getValue(DEFAULT_PORT);
     }
 
     public static int getDefaultBaud() {
         return getInt(DEFAULT_BAUD);
-    }
-
-    /**
-     * Short cut method to set the default port.
-     *
-     * @param port the selected port
-     */
-    public static void setDefaultPort(String port) {
-        set(DEFAULT_PORT_KEY, port);
-    }
-
-    /**
-     * Short cut method to get the click delay value for the mouse
-     *
-     * @return the integer value in Milli Seconds
-     */
-    public static int getClickDelay() {
-        return getInt(CLICK_DELAY_KEY, 10);
-    }
-
-    /**
-     * Short cut method to get the type delay value for the mouse
-     *
-     * @return the integer value in Milli Seconds
-     */
-    public static int getTypeDelay() {
-        return getInt(TYPE_DELAY_KEY, 10);
-    }
-
-    /**
-     * Short cut method to get the move delay value for the mouse
-     *
-     * @return the integer value in Milli Seconds
-     */
-    public static int getMoveDelay() {
-        return getInt(MOVE_DELAY_KEY, 1);
     }
 
     /**

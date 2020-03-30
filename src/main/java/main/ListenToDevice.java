@@ -42,12 +42,12 @@ public class ListenToDevice {
                 }
 
                 @Override
-                public void connected(String devicePort, int baud, String name) {
+                public void connectedSensor(String devicePort, int baud, String name) {
                     System.out.println(port + ": " + "Connected:");
                 }
 
                 @Override
-                public void disConnected(String devicePort, String name) {
+                public void disConnectedSensor(String devicePort, String name) {
                     System.out.println(port + ": " + "Dis-Connected:");
                     canRun = false;
                 }

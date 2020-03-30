@@ -36,12 +36,14 @@ import serial.SerialMonitorThread;
 import serial.SerialPortListener;
 
 import java.awt.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main extends Application {
 
     private static Stage mainStage;
     private static Scene mainScene;
-    private static SerialPortListener guiController;
+    private static FXMLDocumentController guiController;
     private static MouseController mouseController;
 
     private static SerialMonitorThread serialMonitorThread;
@@ -103,9 +105,7 @@ public class Main extends Application {
      * Then we terminate the Java VM with a specific return code
      */
     public static void closeApplication(int returnCode) {
-        if (serialMonitorThread != null) {
-            serialMonitorThread.close();
-        }
+        disConnectSensor();
         if (robotMouseThread != null) {
             robotMouseThread.close();
         }
@@ -113,6 +113,41 @@ public class Main extends Application {
             Platform.exit();
         }
         System.exit(returnCode);
+    }
+
+    /**
+     * Disconnect the sensor thread.
+     *
+     * Set the ref to null ASAP to indicate disconnect. Then stop the thread.
+     *
+     */
+    public static void disConnectSensor() {
+        if (serialMonitorThread != null) {
+            SerialMonitorThread temp = serialMonitorThread;
+            serialMonitorThread = null;
+            temp.close();
+            while (temp.isRunning()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ex) {
+                    // dont care if interrupted
+                }
+            }
+        }
+    }
+
+    public static boolean isConnectedToSensor() {
+        if (serialMonitorThread != null) {
+            return serialMonitorThread.isRunning();
+        }
+        return false;
+    }
+
+    public static boolean isConnectedToMouse() {
+        if (mouseController != null) {
+            return mouseController.isConnectedToMouse();
+        }
+        return false;
     }
 
     /**
@@ -126,7 +161,7 @@ public class Main extends Application {
      * It forwards messages to the GUI controller if it has been set up. It
      * forwards messages to the Mouse controller if it has been set up.
      */
-    public static void connectToSensor(String port) {
+    public static void connectSensor(String port) {
         /*
         Start the serial port reader thread and add a listener for any events
          */
@@ -151,36 +186,28 @@ public class Main extends Application {
                 }
 
                 @Override
-                public void connected(String devicePort, int baud, String name) {
-                    if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
-                        System.out.println("Connected to port:" + devicePort);
-                    }
+                public void connectedSensor(String devicePort, int baud, String name) {
                     if (guiController != null) {
-                        guiController.connected(devicePort, baud, name);
+                        guiController.connectedSensor(devicePort, baud, name);
                     }
                     if (mouseController != null) {
-                        mouseController.connected(devicePort, baud, name);
+                        mouseController.connectedSensor(devicePort, baud, name);
                     }
+                    ConfigData.set(ConfigData.DEFAULT_PORT, devicePort);
                 }
 
                 @Override
-                public void disConnected(String devicePort, String name) {
-                    if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
-                        System.out.println("Dis-Connected port:" + devicePort);
-                    }
+                public void disConnectedSensor(String devicePort, String name) {
                     if (guiController != null) {
-                        guiController.disConnected(devicePort, name);
+                        guiController.disConnectedSensor(devicePort, name);
                     }
                     if (mouseController != null) {
-                        mouseController.disConnected(devicePort, name);
+                        mouseController.disConnectedSensor(devicePort, name);
                     }
                 }
 
                 @Override
                 public boolean rawData(String s) {
-                    if (ConfigData.getBoolean(ConfigData.SENSOR_TO_CONSOLE, false)) {
-                        System.out.println(s);
-                    }
                     return false;
                 }
 
@@ -189,7 +216,7 @@ public class Main extends Application {
                     ConfigData.getBoolean(ConfigData.DEBUG_SENSOR_DATA, false));
         } catch (SerialMonitorException sme) {
             /*
-            If the GUI is running jus display the error message
+            If the GUI is running just display the error message
              */
             if (guiController != null) {
                 guiController.fail(sme);
@@ -205,7 +232,7 @@ public class Main extends Application {
         }
     }
 
-    public static void startMouseController() {
+    public static void initMouseController() {
         mouseController = new MouseController(robotMouseThread,
                 ConfigData.getLongs(ConfigData.CALIB_HEADING_DATA, 3),
                 ConfigData.getLongs(ConfigData.CALIB_VERTICAL_DATA, 3)
@@ -230,7 +257,7 @@ public class Main extends Application {
 
         if (ConfigData.getBoolean(ConfigData.CONNECT_ON_LOAD, true)) {
             try {
-                connectToSensor(ConfigData.getDefaultPort());
+                connectSensor(ConfigData.getDefaultPort());
             } catch (SerialMonitorException e) {
                 if (ConfigData.getBoolean(ConfigData.LAUNCH_GUI, true)) {
                     e.printStackTrace();
@@ -245,11 +272,11 @@ public class Main extends Application {
         robotMouseThread = new RobotMouseThread(new RobotMouseEventListener() {
             @Override
             public void mouseNotInPosition(Point expected, Point actual, int count) {
-                if ((mouseController != null) && (mouseController.isMovingTheMouse())) {
-                    mouseController.stopMovingTheMouse();
+                if (mouseController != null) {
+                    mouseController.disConnectTheMouse();
                 }
                 if (guiController != null) {
-                    ((FXMLDocumentController) guiController).alert("Mouse is out of position [" + count + "]!");
+                    guiController.mouseNotInPosition(expected, actual, count);
                 } else {
                     for (int i = 5; i > 0; i--) {
                         System.out.println("Mouse is out of position. Restarting in [" + i + "]");
@@ -259,8 +286,23 @@ public class Main extends Application {
                             e.printStackTrace();
                         }
                     }
-                    mouseController.startMovingTheMouse();
+                    mouseController.connectTheMouse();
                 }
+            }
+
+            @Override
+            public void connectedMouse() {
+                if (guiController != null) {
+                    guiController.connectedMouse();
+                }
+            }
+
+            @Override
+            public void disConnectedMouse() {
+                if (guiController != null) {
+                    guiController.disConnectedMouse();
+                }
+
             }
         }, getScreenRectangle());
 
@@ -271,7 +313,7 @@ public class Main extends Application {
         an decides what to do with the mouse via the robotMouseThread
          */
         try {
-            startMouseController();
+            initMouseController();
         } catch (ConfigException ce) {
             exitProgramWithHelp("Configuration data '" + args[0] + "' could not be loaded", ce);
         }
@@ -286,7 +328,7 @@ public class Main extends Application {
             If running without GUI then start the mouse moving.
              */
             if (mouseController != null) {
-                mouseController.startMovingTheMouse();
+                mouseController.connectTheMouse();
             }
             /*
             Not running with the GUI so wait for the sensor thread to stop. 

@@ -18,6 +18,7 @@
 package main;
 
 import config.ConfigData;
+import java.awt.Point;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -43,28 +44,28 @@ import serial.SerialMonitorThread;
 import serial.SerialPortListener;
 
 import java.net.URL;
-import java.text.DecimalFormat;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
-
+import robot.RobotMouseEventListener;
 /**
  * @author huw
  */
-public class FXMLDocumentController implements Initializable, SerialPortListener {
+public class FXMLDocumentController implements Initializable, SerialPortListener, RobotMouseEventListener {
 
+    private static final int READINGS_SIZE = 50;
     private static final double TO_RADIANS = Math.PI / 180.0;
     private final Timer displayTimer = new Timer();
     private GraphicsContext canvasGraphics;
-    private boolean connectedToSensor;
     private double canvasWidth;
     private double canvasHeight;
-    private long timeLastDrawn =0;
+    private String rightButtonLabel;
+    private String leftButtonLabel;
     /*
     A list (queue) of the last N readings. This is so we can plot the reading on the canvas
      */
-    private static Readings readings = new Readings(50);
+    private static Readings readings = new Readings(READINGS_SIZE);
 
     @FXML
     private ChoiceBox choiceBoxPortList;
@@ -110,7 +111,11 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
 
     @FXML
     private Button buttonFinish;
-
+    /*
+    ----------------------------------------------------------------------------
+    Section implements button handlers
+    ----------------------------------------------------------------------------
+     */
     @FXML
     private void handleButtonMouseMotion(ActionEvent event) {
         switchMouseState();
@@ -122,57 +127,68 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     }
 
     @FXML
-    private void handleButtonSwapLR(ActionEvent event) {
-        boolean swap = Main.getSerialMonitorThread().swapLR();
-        ConfigData.set(ConfigData.CALIB_SWAP_LR, String.valueOf(swap));
-        buttonSwapLR.setText("<- Swap " + (swap?"ON ":"OFF") + " ->");
+    private void handleButtonConnect() {
+        if (isConnectedToSensor()) {
+            Main.disConnectSensor();
+        } else {
+            Main.connectSensor(choiceBoxPortList.getSelectionModel().getSelectedItem().toString());
+        }
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                initButtonState();
+            }
+        });
     }
 
     @FXML
     private void handleButtonCalibrateVertical(ActionEvent event) {
-        long[] verticalData = ConfigData.getLongs(ConfigData.CALIB_VERTICAL_DATA, 3);
-        verticalData[0] = (long) readings.getLastReading().getY();
-        ConfigData.set(ConfigData.CALIB_VERTICAL_DATA, String.format("%d,%d,%d", verticalData[0], verticalData[1], verticalData[2]));
+        calibrateVerticle();
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                Main.startMouseController();
+                Main.initMouseController();
             }
         });
     }
 
-    ;
-
-
     @FXML
-    private void handleButtonConnect() {
-        if (connectedToSensor) {
-            Main.getSerialMonitorThread().close();
-        } else {
-            Main.connectToSensor(choiceBoxPortList.getSelectionModel().getSelectedItem().toString());
-        }
-    }
-
-    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.0");
-
-    @FXML
-    private void handleCalibrateHeading() {
-        long[] headingData = ConfigData.getLongs(ConfigData.CALIB_HEADING_DATA, 3);
-        headingData[0] = (long) readings.getLastReading().getHeading();
-        ConfigData.set(ConfigData.CALIB_HEADING_DATA, String.format("%d,%d,%d", headingData[0], headingData[1], headingData[2]));
+    private void handleButtonCalibrateHeading() {
+        calibrateHeading();
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                Main.startMouseController();
+                Main.initMouseController();
             }
         });
     }
 
+    @FXML
+    private void handleButtonSwapLR(ActionEvent event) {
+        calibrateHeading();
+        calibrateVerticle();
+        boolean swap = Main.getSerialMonitorThread().swapLR();
+        ConfigData.set(ConfigData.CALIB_SWAP_LR, String.valueOf(swap));
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                buttonSwapLR.setText("<- Swap " + (swap ? "ON " : "OFF") + " ->");
+                Main.initMouseController();
+            }
+        });
+
+    }
+
+    /*
+    ----------------------------------------------------------------------------
+    Section implements the SerialPortListener interface
+    
+    All events must be wrapped in Platform.runLater. This is because you 
+    cannot update the GUI in a thread that is not a JavaFX managed thread.
+    ----------------------------------------------------------------------------
+     */
     @Override
     public void reading(Reading reading) {
-        if ((System.currentTimeMillis() - timeLastDrawn) > 1000) {
-            System.out.println("DELAY");
-        }
         /*
         Add the reading to the list of readings.
          */
@@ -199,21 +215,22 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     }
 
     @Override
-    public void connected(String devicePort, int baud, String name) {
+    public void connectedSensor(String devicePort, int baud, String name) {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                initConnectButtonState(true, devicePort, name);
+                initButtonState();
             }
         });
     }
 
     @Override
-    public void disConnected(String devicePort, String name) {
+    public void disConnectedSensor(String devicePort, String name) {
+        readings.clear();
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                initConnectButtonState(false, devicePort, name);
+                initButtonState();
             }
         });
     }
@@ -223,11 +240,55 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         return false;
     }
 
+    /*
+    ----------------------------------------------------------------------------
+    Section implements the RobotMouseEventListener interface
+    
+    All events must be wrapped in Platform.runLater. This is because you 
+    cannot update the GUI in a thread that is not a JavaFX managed thread.
+    ----------------------------------------------------------------------------
+     */
+    @Override
+    public void mouseNotInPosition(Point expected, Point actual, int count) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                status2.setText("ALERT: Mouse is out of position [" + count + "]!");
+                setMouseConnectButtonState();
+                alertOk("Mouse Movement Aborted", "Mouse is out of position.\nDid you move the mouse?", "Ok ot continue");
+            }
+        });
+    }
+
+    @Override
+    public void connectedMouse() {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                initButtonState();
+            }
+        });
+    }
+
+    @Override
+    public void disConnectedMouse() {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                initButtonState();
+            }
+        });
+    }
+    /*
+    ----------------------------------------------------------------------------
+    Section implements the Java FX and Graphical data display
+    ----------------------------------------------------------------------------
+     */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initConnections();
         initTheCanvas();
-        buttonSwapLR.setText("<- Swap " + (ConfigData.getBoolean(ConfigData.CALIB_SWAP_LR)?"ON ":"OFF") + " ->");
+        buttonSwapLR.setText("<- Swap " + (ConfigData.getBoolean(ConfigData.CALIB_SWAP_LR) ? "ON " : "OFF") + " ->");
         displayTimer.scheduleAtFixedRate(displayTimerTask, 1, 333);
     }
 
@@ -242,130 +303,149 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         @Override
         public void run() {
             /*
-            Only draw if the Connections Tab is selected (showing)
+            Only draw if connected to sensor
              */
             canvasGraphics = mainCanvas.getGraphicsContext2D();
             try {
-                /*
-               Given the size of the canvas. Calculate each X step and the origin line. Also the tick height.
-                 */
-                double xStep = canvasWidth / (readings.capacity() - 1);
-                double tickHeight = canvasHeight / 80;
-                double yOrg = canvasHeight / 2; // Center of the canvas
-                double xOrg = canvasWidth / 2;  // Center of the canvas
-                double radius = Math.min(canvasHeight, canvasWidth) / 4;
-                double radius2 = Math.min(canvasHeight, canvasWidth) / 3;
-                double scaleY = canvasHeight / 3000;
-                double scale = canvasHeight / 1000;
-                double xPos;
-                double yPos;
-                double yPosPrev;
-                double lastPlotReading;
                 /*
                 Init the canvas with a background colour and fill it!
                  */
                 canvasGraphics.setFill(Color.AQUA);
                 canvasGraphics.fillRect(0, 0, canvasWidth, canvasHeight);
-                /*
-                Set the line width to 1. Draw a bounding box and origin line in black
-                 */
                 canvasGraphics.setLineWidth(1);
                 canvasGraphics.setFont(new Font(15));
                 canvasGraphics.setStroke(Color.BLACK);
-                canvasGraphics.strokeRect(0, 0, canvasWidth, canvasHeight);
-                canvasGraphics.strokeLine(0, yOrg, canvasWidth, yOrg);
-                /*
-                Draw the ticks. Each 10th goes below the line
-                 */
-                for (int t = 0; t < readings.capacity(); t++) {
-                    if ((t % 10) == 0) {
-                        canvasGraphics.strokeLine(t * xStep, yOrg - tickHeight, t * xStep, yOrg + tickHeight);
-                    } else {
-                        canvasGraphics.strokeLine(t * xStep, yOrg, t * xStep, yOrg - tickHeight);
+                double yOrg = canvasHeight / 2; // Center of the canvas
+                double xOrg = canvasWidth / 2;  // Center of the canvas
+                if (!isConnectedToSensor()) {
+                    /*
+                    Sensor is not connected.
+                     */
+                    canvasGraphics.setStroke(Color.RED);
+                    canvasGraphics.strokeText("Sensor is not connected", xOrg - 100, 50);
+                } else {
+                    /*
+                    Given the size of the canvas. Calculate each X step and the origin line. Also the tick height.
+                     */
+                    double xStep = canvasWidth / (readings.capacity() - 1);
+                    double tickHeight = canvasHeight / 80;
+                    double radius = Math.min(canvasHeight, canvasWidth) / 4;
+                    double radius2 = Math.min(canvasHeight, canvasWidth) / 3;
+                    double scaleY = canvasHeight / 3000;
+                    double scale = canvasHeight / 1000;
+                    double xPos;
+                    double yPos;
+                    double yPosPrev;
+                    double lastPlotReading;
+                    /*
+                    Set the line width to 1. Draw a bounding box and origin line in black
+                     */
+                    canvasGraphics.strokeRect(0, 0, canvasWidth, canvasHeight);
+                    canvasGraphics.strokeLine(0, yOrg, canvasWidth, yOrg);
+                    /*
+                    Draw the ticks. Each 10th goes below the line
+                     */
+                    for (int t = 0; t < readings.capacity(); t++) {
+                        if ((t % 10) == 0) {
+                            canvasGraphics.strokeLine(t * xStep, yOrg - tickHeight, t * xStep, yOrg + tickHeight);
+                        } else {
+                            canvasGraphics.strokeLine(t * xStep, yOrg, t * xStep, yOrg - tickHeight);
+                        }
                     }
-                }
-                /*
-                Draw the vertical boundaries.
-                 */
-                drawVerticalLimitLine(yOrg, scaleY, Color.BLUE, Main.getMouseController().getVerticalMin(), "MIN:");
-                drawVerticalLimitLine(yOrg, scaleY, Color.BLUE, Main.getMouseController().getVerticalMax(), "MAX:");
+                    /*
+                    Draw the vertical boundaries.
+                     */
+                    drawVerticalLimitLine(yOrg, scaleY, Color.BLUE, Main.getMouseController().getVerticalMin(), "MIN:");
+                    drawVerticalLimitLine(yOrg, scaleY, Color.BLUE, Main.getMouseController().getVerticalMax(), "MAX:");
 
-                drawVerticalLimitLine(yOrg, scaleY, Color.RED, Main.getMouseController().getVerticalLimitMin(), "MIN:");
-                drawVerticalLimitLine(yOrg, scaleY, Color.RED, Main.getMouseController().getVerticalLimitMax(), "MAX:");
+                    drawVerticalLimitLine(yOrg, scaleY, Color.RED, Main.getMouseController().getVerticalLimitMin(), "MIN:");
+                    drawVerticalLimitLine(yOrg, scaleY, Color.RED, Main.getMouseController().getVerticalLimitMax(), "MAX:");
 
-                /*
+                    /*
                     If there are ANY values in the readings
-                 */
-                canvasGraphics.setLineWidth(2);
-                canvasGraphics.setFont(new Font(20));
+                     */
+                    canvasGraphics.setLineWidth(2);
+                    canvasGraphics.setFont(new Font(20));
 
-                if (readings.size() > 0) {
-                    List<Reading> list = readings.readings();
+                    if (readings.size() > 0) {
+                        List<Reading> list = readings.readings();
 
-                    switch (Main.getMouseController().getMouseVerticalState()) {
-                        case INACTIVE:
-                            canvasGraphics.setStroke(Color.DARKGRAY);
-                            break;
-                        case ACTIVE:
-                            canvasGraphics.setStroke(Color.GREEN);
-                            break;
-                        case NULL_ZONE:
-                            canvasGraphics.setStroke(Color.YELLOW);
-                            break;
-                        default:
-                            canvasGraphics.setStroke(Color.RED);
-                            break;
-                    }
+                        switch (Main.getMouseController().getMouseVerticalState()) {
+                            case INACTIVE:
+                                canvasGraphics.setStroke(Color.DARKGRAY);
+                                break;
+                            case ACTIVE:
+                                canvasGraphics.setStroke(Color.GREEN);
+                                break;
+                            case NULL_ZONE:
+                                canvasGraphics.setStroke(Color.YELLOW);
+                                break;
+                            default:
+                                canvasGraphics.setStroke(Color.RED);
+                                break;
+                        }
 
-                    xPos = -(xStep * 2);
-                    yPos = yOrg;
-                    yPosPrev = yPos;
-                    lastPlotReading = 0;
-                    for (Reading reading : list) {
-                        lastPlotReading = reading.getY();
-                        xPos = xPos + xStep;
-                        yPos = yOrg + (lastPlotReading * scaleY);
-                        canvasGraphics.strokeLine(xPos, yPosPrev, xPos + xStep, yPos);
+                        xPos = -(xStep * 2);
+                        yPos = yOrg;
                         yPosPrev = yPos;
-                    }
-                    canvasGraphics.strokeText("" + lastPlotReading, xPos - 80, yPos + 20);
-                    canvasGraphics.strokeText("" + Main.getMouseController().getMouseVerticalOffset(), xPos - 80, yPos - 20);
-                }
-                Reading lastReading = readings.getLastReading();
-                if (lastReading != null) {
-                    canvasGraphics.setStroke(Color.BLACK);
-                    canvasGraphics.strokeOval(xOrg - radius, yOrg - radius, radius * 2, radius * 2);
-                    drawClockHand(xOrg, yOrg, radius, 0, Color.YELLOW, 1, "North");
-                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMin(), Color.BLUE, 1, "Min:" + Main.getMouseController().getHeadingMin());
-                    drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMax(), Color.BLUE, 1, "Max:" + Main.getMouseController().getHeadingMax());
-                    drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMin(), Color.RED, 1, "Min:" + Main.getMouseController().getHeadingLimitMin());
-                    drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMax(), Color.RED, 1, "Max:" + Main.getMouseController().getHeadingLimitMax());
-                    Color col;
+                        lastPlotReading = 0;
+                        for (Reading reading : list) {
+                            lastPlotReading = reading.getY();
+                            xPos = xPos + xStep;
+                            yPos = yOrg + (lastPlotReading * scaleY);
+                            canvasGraphics.strokeLine(xPos, yPosPrev, xPos + xStep, yPos);
+                            yPosPrev = yPos;
+                        }
+                        canvasGraphics.strokeText("" + lastPlotReading, xPos - 80, yPos + 20);
+                        canvasGraphics.strokeText("" + Main.getMouseController().getMouseVerticalOffset(), xPos - 80, yPos - 20);
 
-                    String offsetHeading = String.valueOf(Main.getMouseController().getMouseHeadingOffset());
-                    String actualHeading = String.valueOf(lastReading.getHeading());
-                    String displayHeading;
-                    switch (Main.getMouseController().getMouseHeadingState()) {
-                        case INACTIVE:
-                            col = Color.DARKGREY;
-                            displayHeading = actualHeading + "[D]";
-                            break;
-                        case ACTIVE:
-                            col = Color.GREEN;
-                            displayHeading = actualHeading + "[" + offsetHeading + "]";
-                            break;
-                        case NULL_ZONE:
-                            displayHeading = actualHeading + "[" + offsetHeading + "]";
-                            col = Color.YELLOW;
-                            break;
-                        default:
-                            displayHeading = actualHeading + "[?]";
-                            col = Color.RED;
+                        Reading lastReading = readings.getLastReading();
+                        if (lastReading != null) {
+                            canvasGraphics.setStroke(Color.BLACK);
+                            canvasGraphics.strokeOval(xOrg - radius, yOrg - radius, radius * 2, radius * 2);
+                            drawClockHand(xOrg, yOrg, radius, 0, Color.YELLOW, 1, "North");
+                            drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMin(), Color.BLUE, 1, "Min:" + Main.getMouseController().getHeadingMin());
+                            drawClockHand(xOrg, yOrg, radius2, Main.getMouseController().getHeadingMax(), Color.BLUE, 1, "Max:" + Main.getMouseController().getHeadingMax());
+                            drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMin(), Color.RED, 1, "Min:" + Main.getMouseController().getHeadingLimitMin());
+                            drawClockHand(xOrg, yOrg, radius, Main.getMouseController().getHeadingLimitMax(), Color.RED, 1, "Max:" + Main.getMouseController().getHeadingLimitMax());
+                            Color col;
+
+                            String offsetHeading = String.valueOf(Main.getMouseController().getMouseHeadingOffset());
+                            String actualHeading = String.valueOf(lastReading.getHeading());
+                            String displayHeading;
+                            switch (Main.getMouseController().getMouseHeadingState()) {
+                                case INACTIVE:
+                                    col = Color.DARKGREY;
+                                    displayHeading = actualHeading + "[D]";
+                                    break;
+                                case ACTIVE:
+                                    col = Color.GREEN;
+                                    displayHeading = actualHeading + "[" + offsetHeading + "]";
+                                    break;
+                                case NULL_ZONE:
+                                    displayHeading = actualHeading + "[" + offsetHeading + "]";
+                                    col = Color.YELLOW;
+                                    break;
+                                default:
+                                    displayHeading = actualHeading + "[?]";
+                                    col = Color.RED;
+                            }
+                            if (Main.getSerialMonitorThread().isSwapLR()) {
+                                rightButtonLabel = "A";
+                                leftButtonLabel = "B";
+                            } else {
+                                rightButtonLabel = "B";
+                                leftButtonLabel = "A";                                
+                            }
+                            drawClockHand(xOrg, yOrg, radius2, (long) lastReading.getHeading(), col, 2, displayHeading);
+                            drawButton(50, 50, 80 * scale, Main.getMouseController().isLeftButtonPressed(), lastReading.isB2S(), lastReading.isB2R(), leftButtonLabel);
+                            drawButton(canvasWidth - 50, 50, 80 * scale, Main.getMouseController().isRightButtonPressed(), lastReading.isB1S(), lastReading.isB1R(), rightButtonLabel);
+                        }
+                    } else {
+                        canvasGraphics.setLineWidth(1);
+                        canvasGraphics.setStroke(Color.RED);
+                        canvasGraphics.strokeText("No readings have been received", xOrg - 120, 50);
                     }
-                    drawClockHand(xOrg, yOrg, radius2, (long) lastReading.getHeading(), col, 2, displayHeading);
-                    drawButton(50, 50, 80 * scale, Main.getMouseController().isLeftButtonPressed(), lastReading.isB2S(), lastReading.isB2R(), "B");
-                    drawButton(canvasWidth - 50, 50, 80 * scale, Main.getMouseController().isRightButtonPressed(), lastReading.isB1S(), lastReading.isB1R(), "A");
-                timeLastDrawn = System.currentTimeMillis();
                 }
             } catch (Throwable ex) {
                 ex.printStackTrace();
@@ -373,7 +453,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         }
     };
 
-    public void drawButton(double x, double y, double size, boolean mousePressed, boolean pressed1, boolean pressed2, String marker) {
+    private void drawButton(double x, double y, double size, boolean mousePressed, boolean pressed1, boolean pressed2, String marker) {
         canvasGraphics.setStroke(Color.CYAN);
         if (pressed2) {
             canvasGraphics.setFill(Color.RED);
@@ -403,7 +483,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
      * @param line The line value
      * @param marker The text to annotate the line with
      */
-    public void drawVerticalLimitLine(double yOrg, double scale, Color colour, double line, String marker) {
+    private void drawVerticalLimitLine(double yOrg, double scale, Color colour, double line, String marker) {
         canvasGraphics.setStroke(colour);
         double d = yOrg + (line * scale);
         canvasGraphics.strokeLine(110, d, canvasWidth - 110, d);
@@ -421,7 +501,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
      * @param lineWidth The thickness of the line
      * @param marker The Text to draw at the end of the line.
      */
-    public void drawClockHand(double xOrg, double yOrg, double radius, long degrees, Color colour, double lineWidth, String marker) {
+    private void drawClockHand(double xOrg, double yOrg, double radius, long degrees, Color colour, double lineWidth, String marker) {
         canvasGraphics.setLineWidth(lineWidth);
         canvasGraphics.setStroke(colour);
         double rr = (degrees + 90) * TO_RADIANS;
@@ -431,17 +511,6 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         yy = (radius + 30) * Math.sin(rr);
         xx = (radius + 30) * Math.cos(rr);
         canvasGraphics.strokeText(marker, (xOrg + xx) - 20, (yOrg - yy) + 10);
-    }
-
-    public void alert(String message) {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                status2.setText("ALERT: " + message);
-                setMouseConnectButtonState();
-                alertOk("Mouse Movement Aborted", "Mouse is out of position.\nDid you move the mouse?", "Ok ot continue");
-            }
-        });
     }
 
     /**
@@ -496,64 +565,88 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         });
     }
 
+    /*
+    ----------------------------------------------------------------------------
+    Section implements utility methods
+    ----------------------------------------------------------------------------
+     */
+    /**
+     * Populate the Connections Drop down
+     *
+     * Calls the SerialMonitorThread to get a list of ports
+     */
     private void initConnections() {
         choiceBoxPortList.setItems(FXCollections.observableArrayList(SerialMonitorThread.getPortList()));
         choiceBoxPortList.getSelectionModel().select(ConfigData.getDefaultPort());
         if (choiceBoxPortList.getSelectionModel().getSelectedIndex() < 0) {
             choiceBoxPortList.getSelectionModel().select(0);
         }
-        if (Main.getSerialMonitorThread() != null) {
-            initConnectButtonState(Main.getSerialMonitorThread().isRunning(), Main.getSerialMonitorThread().getDevicePort(), Main.getSerialMonitorThread().getDeviceName());
-        } else {
-            initConnectButtonState(false, null, null);
-        }
-        buttonConnect.setText(connectedToSensor ? "Dis-Connect" : "Connect");
+        buttonConnect.setText(isConnectedToSensor() ? "Dis-Connect" : "Connect");
     }
 
-    private void initConnectButtonState(boolean connectedToSensor, String devicePort, String name) {
-        this.connectedToSensor = connectedToSensor;
-        this.buttonConnect.setText(connectedToSensor ? "Dis-Connect" : "Connect");
-        if (devicePort == null) {
-            this.status2.setText("Select a port and press 'Connect'");
-        } else {
-            this.status2.setText((connectedToSensor ? "" : "Dis") + "Connected Port:" + devicePort + " Device:" + name);
-        }
-        buttonCalibrateHeading.setDisable(!connectedToSensor);
-        buttonCalibrateVertical.setDisable(!connectedToSensor);
+    private void initButtonState() {
+        setSensorConnectButtonState();
         setMouseConnectButtonState();
     }
 
     private void switchMouseState() {
-        MouseController mc = Main.getMouseController();
-        if ((mc != null) && (connectedToSensor)) {
-            if (mc.isMovingTheMouse()) {
-                mc.stopMovingTheMouse();
+        if (isConnectedToSensor()) {
+            if (isConnectedToMouse()) {
+                Main.getMouseController().disConnectTheMouse();
             } else {
-                mc.startMovingTheMouse();
+                Main.getMouseController().connectTheMouse();
             }
         }
         setMouseConnectButtonState();
     }
 
-    private void setMouseConnectButtonState() {
-        MouseController mc = Main.getMouseController();
-        String text = "Start";
-        boolean disable = true;
-        if (mc != null) {
-            if (connectedToSensor) {
-                disable = false;
-                if (mc.isMovingTheMouse()) {
-                    text = "Stop";
-                }
-            } else {
-                mc.stopMovingTheMouse();
-            }
-        }
-        buttonMouseMotion.setText(text);
-        buttonMouseMotion.setDisable(disable);
+    private boolean isConnectedToSensor() {
+        return Main.isConnectedToSensor();
     }
 
-    public static void alertOk(String ti, String txt, String ht) {
+    private boolean isConnectedToMouse() {
+        return Main.isConnectedToMouse();
+    }
+
+    private void setSensorConnectButtonState() {
+        String name = null;
+        if (isConnectedToSensor()) {
+            name = Main.getSerialMonitorThread().getDeviceName();
+            this.buttonConnect.setText("Dis-Connect");
+            buttonCalibrateHeading.setDisable(false);
+            buttonCalibrateVertical.setDisable(false);
+            this.status2.setText("Connected to Sensor: " + name);
+            buttonMouseMotion.setDisable(false);
+        } else {
+            this.buttonConnect.setText("Connect");
+            this.status2.setText("Select a Sensor port and press 'Connect'");
+            buttonCalibrateHeading.setDisable(true);
+            buttonCalibrateVertical.setDisable(true);
+            buttonMouseMotion.setDisable(true);
+        }
+    }
+
+    private void setMouseConnectButtonState() {
+        buttonMouseMotion.setText(isConnectedToMouse() ? "Stop" : "Start");
+    }
+
+    private void calibrateVerticle() {
+        if (readings.hasLastReading()) {
+            long[] verticalData = ConfigData.getLongs(ConfigData.CALIB_VERTICAL_DATA, 3);
+            verticalData[0] = (long) readings.getLastReading().getY();
+            ConfigData.set(ConfigData.CALIB_VERTICAL_DATA, String.format("%d,%d,%d", verticalData[0], verticalData[1], verticalData[2]));
+        }
+    }
+
+    private void calibrateHeading() {
+        if (readings.hasLastReading()) {
+            long[] headingData = ConfigData.getLongs(ConfigData.CALIB_HEADING_DATA, 3);
+            headingData[0] = (long) readings.getLastReading().getHeading();
+            ConfigData.set(ConfigData.CALIB_HEADING_DATA, String.format("%d,%d,%d", headingData[0], headingData[1], headingData[2]));
+        }
+    }
+
+    private static void alertOk(String ti, String txt, String ht) {
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle("Alert:" + ti);
         alert.setHeaderText(txt);
@@ -562,4 +655,5 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
         alert.setY(Main.getMainStage().getY() + 50);
         alert.showAndWait();
     }
+
 }

@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import serial.Reading;
 
 public class Readings {
+
     private final ConcurrentLinkedQueue<Reading> readings;
     private final int capacity;
     private Reading lastReading;
@@ -33,7 +34,7 @@ public class Readings {
         readings = new ConcurrentLinkedQueue();
         this.capacity = capacity;
     }
-    
+
     public List<Reading> readings() {
         List<Reading> l = new ArrayList<>();
         Iterator<Reading> ite = readings.iterator();
@@ -42,7 +43,7 @@ public class Readings {
         }
         return l;
     }
-    
+
     public int add(Reading r) {
         if (firstReading == null) {
             firstReading = r;
@@ -59,10 +60,6 @@ public class Readings {
         return (lastReading.getTimestamp() - firstReading.getTimestamp()) / readings.size();
     }
 
-    public Reading getLastReading() {
-        return lastReading;
-    }
-
     public Reading get() {
         return readings.poll();
     }
@@ -71,7 +68,21 @@ public class Readings {
         return capacity;
     }
 
+    public boolean hasLastReading() {
+        return lastReading != null;
+    }
+    
+    public Reading getLastReading() {
+        return lastReading;
+    }
+
     public int size() {
         return readings.size();
+    }
+
+    void clear() {
+        readings.clear();
+        lastReading = null;
+        firstReading = null;
     }
 }
