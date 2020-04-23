@@ -166,7 +166,15 @@ public class SerialMonitorThread extends Thread {
                     }
                     sb.setLength(0);
                 } else {
-                    sb.append((char) b);
+                    if (b >= 0) {
+                        sb.append((char) b);
+                    } else {
+                        try {
+                            sleep(5);
+                        } catch (InterruptedException i) {
+                            // Do nothing!
+                        }
+                    }
                 }
                 if (canRun) {
                     b = portInStream.read();
