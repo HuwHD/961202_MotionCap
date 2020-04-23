@@ -1,4 +1,7 @@
-# Add your Python code here. E.g.
+# Sensor transmitter app.
+#
+# Program here: https://python.microbit.org/v/2.0
+#
 from microbit import *
 
 import radio
@@ -17,6 +20,9 @@ xd = arr.array('i', [0, 0, 0, 0])
 yd = arr.array('i', [0, 0, 0, 0])
 ind = 0
 flashCount = 0
+
+if button_a.is_pressed():
+    compass.calibrate()
 
 while True:
     flashCount+=1
