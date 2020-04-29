@@ -38,7 +38,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import mouse.MouseController;
 import serial.Reading;
 import serial.SerialMonitorThread;
 import serial.SerialPortListener;
@@ -51,6 +50,18 @@ import java.util.TimerTask;
 import robot.RobotMouseEventListener;
 /**
  * @author huw
+ * 
+ * Note on event handling in the UI.
+ * 
+ * Long-running operations must not be run on the JavaFX application thread, 
+ * since this prevents JavaFX from updating the UI, resulting in a frozen UI.
+ * 
+ * Furthermore any change to a Node that is part of a "live" scene graph must 
+ * happen on the JavaFX application thread. <b>Platform.runLater</b> can be used to 
+ * execute those updates on the JavaFX application thread.
+ * 
+ * @See: <a href="https://riptutorial.com/javafx/example/7291/updating-the-ui-using-platform-runlater"/>
+ * 
  */
 public class FXMLDocumentController implements Initializable, SerialPortListener, RobotMouseEventListener {
 
@@ -65,7 +76,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     /*
     A list (queue) of the last N readings. This is so we can plot the reading on the canvas
      */
-    private static Readings readings = new Readings(READINGS_SIZE);
+    private final static Readings readings = new Readings(READINGS_SIZE);
 
     @FXML
     private ChoiceBox choiceBoxPortList;

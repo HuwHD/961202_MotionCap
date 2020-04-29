@@ -17,10 +17,6 @@
  */
 package mouse;
 
-/**
- *
- * @author Stuart
- */
 public class Degrees {
 
     public static final int DEG = 360;

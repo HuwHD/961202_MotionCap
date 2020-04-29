@@ -17,10 +17,6 @@
  */
 package mouse;
 
-/**
- *
- * @author Stuart
- */
 public enum MouseState {
     DISCONNECTED,INACTIVE, ACTIVE, NULL_ZONE;
 }

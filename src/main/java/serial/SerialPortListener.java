@@ -18,9 +18,40 @@
 package serial;
 
 public interface SerialPortListener {
-    void reading(Reading s);
+    /**
+     * A reading of sensor data has been parsed and a Reading object created. 
+     * @param r The Reading containing the sensor data. 
+     */
+    void reading(Reading r);
+    /**
+     * A reading of sensor data has been parsed and failed. 
+     * 
+     * @param e The exception contains the details
+     */
     void fail(Exception e);
+    /**
+     * The sensor has connected successfully.
+     * 
+     * The GUI component requires this data to update the status on screen.
+     * 
+     * @param devicePort The connected port
+     * @param baud The connected baud rate
+     * @param name The name of the sensor. Defined in the configuration data.
+     */
     void connectedSensor(String devicePort, int baud, String name);
+    /**
+     * The sensor has disconnected successfully
+     * 
+     * The GUI component requires this data to update the status on screen.
+     * 
+     * @param devicePort The disconnected port
+     * @param name The name of the sensor. Defined in the configuration data.
+     */
     void disConnectedSensor(String devicePort, String name);
+    /**
+     * Used for debugging to write the raw data from the sensor to the logs.
+     * @param s The String received from the Sensor
+     * @return true = consumed (do not scan the data and create a Reading) 
+     */
     boolean rawData(String s);
 }

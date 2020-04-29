@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import serial.Reading;
 
+/**
+ * A list of Reading(s) for use by the FXMLDocumentController to draw a graph 
+ * of the last N readings.
+ */
 public class Readings {
 
     private final ConcurrentLinkedQueue<Reading> readings;
@@ -30,11 +34,20 @@ public class Readings {
     private Reading lastReading;
     private Reading firstReading;
 
+    /**
+     * Create with a given capacity.
+     * 
+     * @param capacity The number of readings to be displayed
+     */
     public Readings(int capacity) {
         readings = new ConcurrentLinkedQueue();
         this.capacity = capacity;
     }
 
+    /**
+     * Return a list of the readings from  the queue;
+     * @return A list of readings
+     */
     public List<Reading> readings() {
         List<Reading> l = new ArrayList<>();
         Iterator<Reading> ite = readings.iterator();
@@ -44,6 +57,11 @@ public class Readings {
         return l;
     }
 
+    /**
+     * Add a reading, keeping the first and last reading in sync
+     * @param r The reading to be added.
+     * @return the number of readings
+     */
     public int add(Reading r) {
         if (firstReading == null) {
             firstReading = r;
@@ -56,30 +74,61 @@ public class Readings {
         return readings.size();
     }
 
+    /**
+     * Get the average time between readings.
+     * @return the latency of the sensor readings in milli seconds
+     */
     public long getLatency() {
         return (lastReading.getTimestamp() - firstReading.getTimestamp()) / readings.size();
     }
 
+    /**
+     * Read a reading from the front of the queue
+     * @return The next reading.
+     */
     public Reading get() {
         return readings.poll();
     }
 
+    /**
+     * Get the maximum number of readings
+     * @return the maximum number of readings
+     */
     public int capacity() {
         return capacity;
     }
 
+    /**
+     * is there a 'last' reading.
+     * 
+     * There will not be a reading if the sensor is not connected or the first
+     * one has not been received.
+     * 
+     * @return true if there is a last reading.
+     */
     public boolean hasLastReading() {
         return lastReading != null;
     }
     
+    /**
+     * Get the last reading to be added.
+     * @return the last reading to be added.
+     */
     public Reading getLastReading() {
         return lastReading;
     }
 
+    /**
+     * Get the actual number of readings. May be less than capacity.
+     * @return the actual number of readings
+     */
     public int size() {
         return readings.size();
     }
 
+    /**
+     * clear all of the readings and clear the first and last.
+     */
     void clear() {
         readings.clear();
         lastReading = null;

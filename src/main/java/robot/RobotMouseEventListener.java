@@ -23,7 +23,23 @@ import java.awt.*;
  * When a mouse event occurs the class with this interface will be caused.
  */
 public interface RobotMouseEventListener {
+    /**
+     * When the mouse is not in the correct position control is taken from the 
+     * mouse controller and passed to the user.
+     * 
+     * @param expected The expected position
+     * @param actual The actual position
+     * @param count The consecutive number of times it was out of position
+     */
     void mouseNotInPosition(Point expected, Point actual, int count);
+    /**
+     * The mouse in connected. This means that control of the mouse is being 
+     * driven by the sensor.
+     */
     void connectedMouse();
+    /**
+     * The mouse in disconnected. This means that control of the mouse is being 
+     * driven by the real mouse.
+     */
     void disConnectedMouse();
 }

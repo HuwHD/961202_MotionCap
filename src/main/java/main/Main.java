@@ -36,8 +36,6 @@ import serial.SerialMonitorThread;
 import serial.SerialPortListener;
 
 import java.awt.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Main extends Application {
 

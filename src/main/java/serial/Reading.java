@@ -14,13 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * References:
- *  Compass Code from MicroBit Git Repository. 
- *  Used as a refernce to implement tiltCompensatedBearing code in Java.
- *      https://github.com/lancaster-university/microbit-dal/blob/master/source/drivers/MicroBitCompass.cpp
- *  Accelerometer code from MicroBit Git Repository.
- *  Used as a refernce to implement tiltCompensatedBearing code in Java.
- *      https://github.com/lancaster-university/microbit-dal/blob/master/source/drivers/MicroBitAccelerometer.cpp
  */
 package serial;
 
@@ -50,10 +43,20 @@ public class Reading {
     private final boolean b2R;
     private final long timestamp;
 
+    /**
+     * Factory method to return a reading from the sensor data.
+     * @param data the sensor data
+     * @param swapLR flag if need to swap left and right buttons.
+     * @return The Reading.
+     * @Throws ReadingException is the data is not valid
+     */
     public static Reading parse(String data, boolean swapLR) {
         if (data == null) {
             return null;
         }
+        /*
+        There MUST be 7 values for it to be valid
+        */
         String[] values = data.trim().split("\\,");
         if (values.length != 7) {
             System.err.println("Invalid sensor data [" + data + "]");
@@ -70,13 +73,17 @@ public class Reading {
             if (swapLR) {
                 return new Reading(x, y, h, b1S, b2S, b1R, b2R);
             } else {
-                return new Reading(x, -y, h, b2S, b1S, b1R, b2R);
+                return new Reading(x, y, h, b2S, b1S, b1R, b2R);
             }
         } catch (Exception ex) {
             throw new ReadingException(("Failed to read ["+data+"]"), ex);
         }
     }
 
+    /**
+     * Return a JSON like string of the readings
+     * @return a String
+     */
     @Override
     public String toString() {
         return "Reading{" 
@@ -92,7 +99,16 @@ public class Reading {
 
     private static DecimalFormat df2 = new DecimalFormat("000000.0");
 
-
+/**
+ * Create a Reading
+ * @param x The X value (tilt)
+ * @param y The Y value (Roll)
+ * @param heading The heading in degrees
+ * @param b1S The A|B button state on the sensor (A if not swapped)
+ * @param b2S The B|A button state on the sensor (B if not swapped)
+ * @param b1R The A|B button state on the receiver (A if not swapped, false if no receiver)
+ * @param b2R The B|A button state on the receiver (A if not swapped, false if no receiver)
+ */
     private Reading(double x, double y, double heading, boolean b1S, boolean b2S, boolean b1R, boolean b2R) {
         this.x = x;
         this.y = y;

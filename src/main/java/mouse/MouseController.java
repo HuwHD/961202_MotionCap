@@ -46,9 +46,6 @@ public class MouseController implements SerialPortListener {
     private final long minVerticalWidth2;
     private long mouseVerticalOffset;
 
-    private boolean buttonADown;
-    private boolean buttonBDown;
-
     private MouseState mouseHeadingState;
     private MouseState mouseVerticalState;
 
