@@ -29,6 +29,7 @@ public class MouseController implements SerialPortListener {
     private final Degrees headingLimitMin;
     private final Degrees headingLimitMax;
     private final Degrees headingOffset;
+    private final double headingSpeed;
     private final long maxHeadingWidth1;
     private final long minHeadingWidth1;
     private final long maxHeadingWidth2;
@@ -40,6 +41,7 @@ public class MouseController implements SerialPortListener {
     private final long verticalLimitMin;
     private final long verticalLimitMax;
     private final long verticalOffset;
+    private final double verticalSpeed;
     private final long maxVerticalWidth1;
     private final long minVerticalWidth1;
     private final long maxVerticalWidth2;
@@ -49,12 +51,13 @@ public class MouseController implements SerialPortListener {
     private MouseState mouseHeadingState;
     private MouseState mouseVerticalState;
 
-    public MouseController(RobotMouseThread robotMouseThread, long[] headingData, long[] verticalData) {
+    public MouseController(RobotMouseThread robotMouseThread, long[] headingData, double headingSpeed, long[] verticalData, double verticalSpeed) {
         this.mouseHeadingState = MouseState.DISCONNECTED;
         this.mouseVerticalState = MouseState.DISCONNECTED;
         /*
         Set up the Heading (Horizontal) boundries
          */
+        this.headingSpeed = headingSpeed;
         this.headingOffset = new Degrees(headingData[0]);
         this.minHeadingWidth1 = headingData[1];
         this.maxHeadingWidth1 = headingData[2];
@@ -67,6 +70,7 @@ public class MouseController implements SerialPortListener {
         /*
         Set up the Up/Down (Vertical) boundries
          */
+        this.verticalSpeed = verticalSpeed;
         this.verticalOffset = verticalData[0];
         this.minVerticalWidth1 = verticalData[1];
         this.maxVerticalWidth1 = verticalData[2];
@@ -278,7 +282,7 @@ public class MouseController implements SerialPortListener {
         mouseHeadingOffset = heading;
         mouseHeadingState = MouseState.ACTIVE;
         if (robotMouseThread.isConnected()) {
-            robotMouseThread.setSpeedX(-(heading * 5));
+            robotMouseThread.setSpeedX(-(heading * headingSpeed));
         }
     }
 
@@ -302,7 +306,7 @@ public class MouseController implements SerialPortListener {
         mouseVerticalOffset = l;
         mouseVerticalState = MouseState.ACTIVE;
         if (robotMouseThread.isConnected()) {
-            robotMouseThread.setSpeedY(l / 2.0);
+            robotMouseThread.setSpeedY(l * verticalSpeed);
         }
     }
 

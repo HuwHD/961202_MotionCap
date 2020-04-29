@@ -234,7 +234,9 @@ public class Main extends Application {
     public static void initMouseController() {
         mouseController = new MouseController(robotMouseThread,
                 ConfigData.getLongs(ConfigData.CALIB_HEADING_DATA, 3),
-                ConfigData.getLongs(ConfigData.CALIB_VERTICAL_DATA, 3)
+                ConfigData.getDouble(ConfigData.CALIB_HEADING_SPEED, 5.0),
+                ConfigData.getLongs(ConfigData.CALIB_VERTICAL_DATA, 3),
+                ConfigData.getDouble(ConfigData.CALIB_VERTICAL_SPEED, 0.5)
         );
     }
 

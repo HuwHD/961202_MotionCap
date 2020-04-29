@@ -46,7 +46,10 @@ public class ConfigData {
     public static final String CALIB_SWAP_UD = "calibrate.swapUpDown";
     public static final String DEBUG_SENSOR_DATA = "debug.sensordata";
     public static final String CALIB_HEADING_DATA = "calibrate.heading.data";
+    public static final String CALIB_HEADING_SPEED = "calibrate.heading.speed";
     public static final String CALIB_VERTICAL_DATA = "calibrate.vertical.data";
+    public static final String CALIB_VERTICAL_SPEED = "calibrate.vertical.speed";
+    
     public static final String SETTINGS_FILE_KEY = "settings.file";
     public static final String DEFAULT_PORT = "default.port";
     public static final String DEFAULT_BAUD = "default.baud";
@@ -265,6 +268,26 @@ public class ConfigData {
         }
     }
 
+     /**
+     * Get an optional double property or a default value if not found.
+     * <pre>
+     * If found it will convert to an integer.
+     * If the conversion fails an exception is thrown.
+     * </pre>
+     *
+     * @param name The property name
+     * @param defaultValue The value returned if not found
+     * @return The int value
+     */
+    public static double getDouble(String name, double defaultValue) {
+        String s = getValue(name, "" + defaultValue);
+        try {
+            return Double.parseDouble(s);
+        } catch (NumberFormatException ex) {
+            throw new ConfigException("Config data [" + fileName + "] property [" + name + "] or [os." + OSNAME + "." + name + "] = [" + s + "] is an invalid integer");
+        }
+    }
+    
     /**
      * Get a boolean value. If not defined then return defaultValue.
      *
