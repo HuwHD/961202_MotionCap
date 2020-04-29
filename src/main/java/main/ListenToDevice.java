@@ -51,7 +51,7 @@ public class ListenToDevice {
                     System.out.println(port + ": " + "Dis-Connected:");
                     canRun = false;
                 }
-            }, ConfigData.getValue(ConfigData.SENSOR_NAME, "Sensor"),false, false);
+            }, ConfigData.getValue(ConfigData.SENSOR_NAME, "Sensor"),false, false, false);
         } catch (SerialMonitorException sme) {
             sme.printStackTrace();
             canRun = false;

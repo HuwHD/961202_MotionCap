@@ -47,21 +47,23 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
+import javafx.scene.control.CheckBox;
 import robot.RobotMouseEventListener;
 /**
  * @author huw
- * 
+ *
  * Note on event handling in the UI.
- * 
- * Long-running operations must not be run on the JavaFX application thread, 
+ *
+ * Long-running operations must not be run on the JavaFX application thread,
  * since this prevents JavaFX from updating the UI, resulting in a frozen UI.
- * 
- * Furthermore any change to a Node that is part of a "live" scene graph must 
- * happen on the JavaFX application thread. <b>Platform.runLater</b> can be used to 
- * execute those updates on the JavaFX application thread.
- * 
- * @See: <a href="https://riptutorial.com/javafx/example/7291/updating-the-ui-using-platform-runlater"/>
- * 
+ *
+ * Furthermore any change to a Node that is part of a "live" scene graph must
+ * happen on the JavaFX application thread. <b>Platform.runLater</b> can be used
+ * to execute those updates on the JavaFX application thread.
+ *
+ * @See:
+ * <a href="https://riptutorial.com/javafx/example/7291/updating-the-ui-using-platform-runlater"/>
+ *
  */
 public class FXMLDocumentController implements Initializable, SerialPortListener, RobotMouseEventListener {
 
@@ -91,7 +93,10 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     private Button buttonCalibrateVertical;
 
     @FXML
-    private Button buttonSwapLR;
+    private CheckBox cbSwapLR;
+
+    @FXML
+    private CheckBox cbSwapUD;
 
     @FXML
     private Button buttonCalibrateHeading;
@@ -122,6 +127,7 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
 
     @FXML
     private Button buttonFinish;
+
     /*
     ----------------------------------------------------------------------------
     Section implements button handlers
@@ -175,19 +181,22 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     }
 
     @FXML
-    private void handleButtonSwapLR(ActionEvent event) {
-        calibrateHeading();
-        calibrateVerticle();
-        boolean swap = Main.getSerialMonitorThread().swapLR();
-        ConfigData.set(ConfigData.CALIB_SWAP_LR, String.valueOf(swap));
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                buttonSwapLR.setText("<- Swap " + (swap ? "ON " : "OFF") + " ->");
-                Main.initMouseController();
-            }
-        });
+    private void handleCbSwapUD(ActionEvent event) {
+        boolean current = cbSwapUD.isSelected();
+        ConfigData.set(ConfigData.CALIB_SWAP_UD, String.valueOf(current));
+        if (Main.isConnectedToSensor()) {
+            calibrateVerticle();
+            Main.getSerialMonitorThread().setSwapUD(current);
+        }
+    }
 
+    @FXML
+    private void handleCbSwapLR(ActionEvent event) {
+        boolean current = cbSwapLR.isSelected();
+        ConfigData.set(ConfigData.CALIB_SWAP_LR, String.valueOf(current));
+        if (Main.isConnectedToSensor()) {
+            Main.getSerialMonitorThread().setSwapLR(current);
+        }
     }
 
     /*
@@ -299,7 +308,9 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
     public void initialize(URL url, ResourceBundle rb) {
         initConnections();
         initTheCanvas();
-        buttonSwapLR.setText("<- Swap " + (ConfigData.getBoolean(ConfigData.CALIB_SWAP_LR) ? "ON " : "OFF") + " ->");
+        setSensorConnectButtonState();
+        cbSwapLR.setSelected(ConfigData.getBoolean(ConfigData.CALIB_SWAP_LR, false));
+        cbSwapUD.setSelected(ConfigData.getBoolean(ConfigData.CALIB_SWAP_UD, false));
         displayTimer.scheduleAtFixedRate(displayTimerTask, 1, 333);
     }
 
@@ -442,11 +453,11 @@ public class FXMLDocumentController implements Initializable, SerialPortListener
                                     col = Color.RED;
                             }
                             if (Main.getSerialMonitorThread().isSwapLR()) {
+                                rightButtonLabel = "B";
+                                leftButtonLabel = "A";
+                            } else {
                                 rightButtonLabel = "A";
                                 leftButtonLabel = "B";
-                            } else {
-                                rightButtonLabel = "B";
-                                leftButtonLabel = "A";                                
                             }
                             drawClockHand(xOrg, yOrg, radius2, (long) lastReading.getHeading(), col, 2, displayHeading);
                             drawButton(50, 50, 80 * scale, Main.getMouseController().isLeftButtonPressed(), lastReading.isB2S(), lastReading.isB2R(), leftButtonLabel);

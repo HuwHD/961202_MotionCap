@@ -211,6 +211,7 @@ public class Main extends Application {
 
             }, ConfigData.getValue(ConfigData.SENSOR_NAME, "Sensor"),
                     ConfigData.getBoolean(ConfigData.CALIB_SWAP_LR, false),
+                    ConfigData.getBoolean(ConfigData.CALIB_SWAP_UD, false),
                     ConfigData.getBoolean(ConfigData.DEBUG_SENSOR_DATA, false));
         } catch (SerialMonitorException sme) {
             /*

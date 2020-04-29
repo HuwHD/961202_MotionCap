@@ -36,6 +36,7 @@ public class SerialMonitorThread extends Thread {
     private boolean canRun = true;
     private boolean running = false;
     private boolean swapLR = false;
+    private boolean swapUD = false;
     private boolean debug = false;
 
     /**
@@ -47,9 +48,10 @@ public class SerialMonitorThread extends Thread {
      * @param deviceName The (human readable) name of the port.
      * @throws serial.SerialMonitorException when connection fails.
      */
-    public SerialMonitorThread(String devicePort, int deviceBaud, SerialPortListener serialPortListener, String deviceName, boolean swapLR, boolean debug) throws SerialMonitorException {
+    public SerialMonitorThread(String devicePort, int deviceBaud, SerialPortListener serialPortListener, String deviceName, boolean swapLR, boolean swapUD, boolean debug) throws SerialMonitorException {
         this.debug = debug;
         this.swapLR = swapLR;
+        this.swapUD = swapUD;
         this.deviceName = deviceName;
         this.devicePort = devicePort;
         this.deviceBaud = deviceBaud;
@@ -152,10 +154,8 @@ public class SerialMonitorThread extends Thread {
                             Parse the data and call reading
                              */
                             try {
-                                Reading reading = Reading.parse(data, swapLR);
-                                if (reading != null) {
-                                    serialPortListener.reading(reading);
-                                }
+                                Reading reading = Reading.parse(data, swapLR, swapUD);
+                                serialPortListener.reading(reading);
                             } catch (Exception e) {
                                 if (debug) {
                                     e.printStackTrace();
@@ -250,13 +250,20 @@ public class SerialMonitorThread extends Thread {
         return portList;
     }
 
+    public void setSwapLR(boolean swapLR) {
+        this.swapLR = swapLR;
+    }
+
+    public void setSwapUD(boolean swapUD) {
+        this.swapUD = swapUD;
+    }
+
     public boolean isSwapLR() {
         return swapLR;
     }
-
-    public boolean swapLR() {
-        this.swapLR = !swapLR;
-        return this.swapLR;
+    
+    public boolean isSwapUD() {
+        return swapUD;
     }
 
     public boolean isRunning() {

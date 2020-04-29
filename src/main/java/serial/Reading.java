@@ -47,10 +47,11 @@ public class Reading {
      * Factory method to return a reading from the sensor data.
      * @param data the sensor data
      * @param swapLR flag if need to swap left and right buttons.
+     * @param swapUD flag if need to swap up and down movement.
      * @return The Reading.
      * @Throws ReadingException is the data is not valid
      */
-    public static Reading parse(String data, boolean swapLR) {
+    public static Reading parse(String data, boolean swapLR, boolean swapUD) {
         if (data == null) {
             return null;
         }
@@ -59,8 +60,7 @@ public class Reading {
         */
         String[] values = data.trim().split("\\,");
         if (values.length != 7) {
-            System.err.println("Invalid sensor data [" + data + "]");
-            return null;
+            throw new ReadingException("Invalid sensor data [" + data + "]");
         }
         try {
             double x = parseNum(values[SERIES_X], "X", data);
@@ -70,10 +70,13 @@ public class Reading {
             boolean b2S = parseBool(values[SERIES_BUTTON_BS]);
             boolean b1R = parseBool(values[SERIES_BUTTON_AR]);
             boolean b2R = parseBool(values[SERIES_BUTTON_BR]);
+            if (swapUD) {
+                y = -y;
+            }
             if (swapLR) {
-                return new Reading(x, y, h, b1S, b2S, b1R, b2R);
+                return new Reading(x, -y, h, b1S, b2S, b1R, b2R);
             } else {
-                return new Reading(x, y, h, b2S, b1S, b1R, b2R);
+                return new Reading(x, -y, h, b2S, b1S, b1R, b2R);
             }
         } catch (Exception ex) {
             throw new ReadingException(("Failed to read ["+data+"]"), ex);
