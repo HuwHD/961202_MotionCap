@@ -21,10 +21,17 @@ import java.awt.*;
 import java.awt.event.InputEvent;
 
 /**
- * Move the mouse in the background.
+ * Move the mouse in the background using the robot package.
+ * 
+ * All mouse moves and button presses occur in the thread (run method).
+ * 
+ * There were issues when the mouse button methods were called in another thread
+ * so all calls to the robot API were moved to the thread (run method).
+ * 
+ * I think this is an issue with the way the robot API works.
  * 
  */
-public class RobotMouseThread extends Thread {
+public class RobotMouseThread extends Thread implements RobotMouseThreadInterface {
 
     private enum ButtonState {
         DOWN, IS_DOWN, UP, IS_UP
@@ -125,11 +132,13 @@ public class RobotMouseThread extends Thread {
         robotMouse.delay(ms);
     }
 
+    @Override
     public void setSpeedY(double y) {
         this.hasSpeed = ((Math.abs(this.speedX) > 0.0001) || (Math.abs(y) > 0.0001));
         this.speedY = y;
     }
 
+    @Override
     public void setSpeedX(double x) {
         this.hasSpeed = ((Math.abs(x) > 0.0001) || (Math.abs(this.speedY) > 0.0001));
         this.speedX = x;
@@ -155,6 +164,7 @@ public class RobotMouseThread extends Thread {
         }
     }
     
+    @Override
     public void connect() {
         this.connected = true;
         if (listener!=null) {

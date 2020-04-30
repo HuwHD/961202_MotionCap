@@ -21,7 +21,14 @@ mainClassName = "main.Main"
 
 run {
     args "config.properties"
+}
 
+// Ref https://stackoverflow.com/questions/40954017/gradle-how-to-get-output-from-test-stderr-stdout-into-console
+test {
+    testLogging {
+        outputs.upToDateWhen {false}
+        showStandardStreams = true
+    }
 }
 
 dependencies {
