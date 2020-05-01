@@ -31,10 +31,10 @@ public class ReadingTest {
     public void testRangeSwapLR() {
         Reading r;
         r = Reading.parse("10,143,1,1,0,1,0:", true, false);
-        assertEquals("Reading{x=000010.0, y=000143.0, h=1, b1S=false, b2S=true, b1R=true, b2R=false}", r.toString());
+        assertEquals("Reading{x=000010.0, y=-000143.0, h=1, b1S=false, b2S=true, b1R=true, b2R=false}", r.toString());
  
         r = Reading.parse("10,143,1,1,0,0,1:", true, false);
-        assertEquals("Reading{x=000010.0, y=000143.0, h=1, b1S=false, b2S=true, b1R=false, b2R=true}", r.toString());
+        assertEquals("Reading{x=000010.0, y=-000143.0, h=1, b1S=false, b2S=true, b1R=false, b2R=true}", r.toString());
     }
 
     /**
@@ -44,13 +44,13 @@ public class ReadingTest {
     public void testRangeSwapUD() {
         Reading r;
         r = Reading.parse("10,143,1,1,0,1,0:", false, true);
-        assertEquals("Reading{x=000010.0, y=-000143.0, h=1, b1S=true, b2S=false, b1R=true, b2R=false}", r.toString());
-
-        r = Reading.parse("10,-143,1,1,0,1,0:", false, true);
         assertEquals("Reading{x=000010.0, y=000143.0, h=1, b1S=true, b2S=false, b1R=true, b2R=false}", r.toString());
 
+        r = Reading.parse("10,-143,1,1,0,1,0:", false, true);
+        assertEquals("Reading{x=000010.0, y=-000143.0, h=1, b1S=true, b2S=false, b1R=true, b2R=false}", r.toString());
+
         r = Reading.parse("10,143,1,1,0,1,0:", true, true);
-        assertEquals("Reading{x=000010.0, y=-000143.0, h=1, b1S=false, b2S=true, b1R=true, b2R=false}", r.toString());
+        assertEquals("Reading{x=000010.0, y=000143.0, h=1, b1S=false, b2S=true, b1R=true, b2R=false}", r.toString());
     }
 
     /**
@@ -60,22 +60,22 @@ public class ReadingTest {
     public void testRangeDouble() {
         Reading r;
         r = Reading.parse("10.456,143,0.5,0,0,0,0:", false, false);
-        assertEquals("Reading{x=000010.5, y=000143.0, h=1, b1S=false, b2S=false, b1R=false, b2R=false}", r.toString());
+        assertEquals("Reading{x=000010.5, y=-000143.0, h=1, b1S=false, b2S=false, b1R=false, b2R=false}", r.toString());
 
         r = Reading.parse("10.456,143,-0.5,0,0,1,0:", false, false);
-        assertEquals("Reading{x=000010.5, y=000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=false}", r.toString());
+        assertEquals("Reading{x=000010.5, y=-000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=false}", r.toString());
 
         r = Reading.parse("10.456,143.99,-2,0,0,1,0:", false, false);
-        assertEquals("Reading{x=000010.5, y=000144.0, h=-2, b1S=false, b2S=false, b1R=true, b2R=false}", r.toString());
+        assertEquals("Reading{x=000010.5, y=-000144.0, h=-2, b1S=false, b2S=false, b1R=true, b2R=false}", r.toString());
 
         r = Reading.parse("10.456,143,0,0,0,1,0,", false, false);
-        assertEquals("Reading{x=000010.5, y=000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=false}", r.toString());
+        assertEquals("Reading{x=000010.5, y=-000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=false}", r.toString());
 
         r = Reading.parse("10.456,143,0,0,0,0,1,", false, false);
-        assertEquals("Reading{x=000010.5, y=000143.0, h=0, b1S=false, b2S=false, b1R=false, b2R=true}", r.toString());
+        assertEquals("Reading{x=000010.5, y=-000143.0, h=0, b1S=false, b2S=false, b1R=false, b2R=true}", r.toString());
 
         r = Reading.parse("10.456,143,0,0,0,1,1:", false, false);
-        assertEquals("Reading{x=000010.5, y=000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=true}", r.toString());
+        assertEquals("Reading{x=000010.5, y=-000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=true}", r.toString());
 
         testParseFail("10.456,143,-2,-16,20.5,1:", false, false);
 
@@ -90,22 +90,22 @@ public class ReadingTest {
     public void testRangeInt() {
         Reading r;
         r = Reading.parse("10,143,1,1,0,0,0:", false, false);
-        assertEquals("Reading{x=000010.0, y=000143.0, h=1, b1S=true, b2S=false, b1R=false, b2R=false}", r.toString());
+        assertEquals("Reading{x=000010.0, y=-000143.0, h=1, b1S=true, b2S=false, b1R=false, b2R=false}", r.toString());
 
         r = Reading.parse("10,143,0,1,0,1,0:", false, false);
-        assertEquals("Reading{x=000010.0, y=000143.0, h=0, b1S=true, b2S=false, b1R=true, b2R=false}", r.toString());
+        assertEquals("Reading{x=000010.0, y=-000143.0, h=0, b1S=true, b2S=false, b1R=true, b2R=false}", r.toString());
 
         r = Reading.parse("10,143,-2,0,0,1,0:", false, false);
-        assertEquals("Reading{x=000010.0, y=000143.0, h=-2, b1S=false, b2S=false, b1R=true, b2R=false}", r.toString());
+        assertEquals("Reading{x=000010.0, y=-000143.0, h=-2, b1S=false, b2S=false, b1R=true, b2R=false}", r.toString());
 
         r = Reading.parse("10,143,0,0,0,1,0,", false, false);
-        assertEquals("Reading{x=000010.0, y=000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=false}", r.toString());
+        assertEquals("Reading{x=000010.0, y=-000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=false}", r.toString());
 
         r = Reading.parse("10,143,0,0,0,1,1,", false, false);
-        assertEquals("Reading{x=000010.0, y=000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=true}", r.toString());
+        assertEquals("Reading{x=000010.0, y=-000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=true}", r.toString());
 
         r = Reading.parse("10,143,0,0,0,1,1:", false, false);
-        assertEquals("Reading{x=000010.0, y=000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=true}", r.toString());
+        assertEquals("Reading{x=000010.0, y=-000143.0, h=0, b1S=false, b2S=false, b1R=true, b2R=true}", r.toString());
 
         testParseFail("10,143,-2,-16,0,1:", false, false);
 

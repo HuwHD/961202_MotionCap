@@ -74,9 +74,9 @@ public class Reading {
                 y = -y;
             }
             if (swapLR) {
-                return new Reading(x, -y, h, b1S, b2S, b1R, b2R);
-            } else {
                 return new Reading(x, -y, h, b2S, b1S, b1R, b2R);
+            } else {
+                return new Reading(x, -y, h, b1S, b2S, b1R, b2R);
             }
         } catch (Exception ex) {
             throw new ReadingException(("Failed to read ["+data+"]"), ex);

@@ -21,6 +21,11 @@ package robot;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+/**
+ * Ad a test for the calculation of RoughlyNotEqual on the RobotMouseThread.
+ * 
+ * @author huw
+ */
 public class RoughlyNotEqualTest {
     
     @Test

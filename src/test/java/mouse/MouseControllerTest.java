@@ -46,10 +46,9 @@ public class MouseControllerTest {
         mc.disConnectTheMouse();
         assertFalse(mc.isConnectedToMouse());
 
-        System.out.println(robot.toString());
         assertFalse(robot.toString().contains("setSpeed"));  // Set speed should not be called
-        assertTrue(robot.toString().contains("leftButtonRelease"));
-        assertTrue(robot.toString().contains("rightButtonPress"));
+        assertTrue(robot.toString().contains("leftButtonPress"));
+        assertTrue(robot.toString().contains("rightButtonRelease"));
         assertTrue(robot.toString().contains("connect"));
         assertTrue(robot.toString().contains("disConnect"));
     }
@@ -64,7 +63,6 @@ public class MouseControllerTest {
         mc.disConnectTheMouse();
         assertFalse(mc.isConnectedToMouse());
 
-        System.out.println(robot.toString());
         assertTrue(robot.toString().contains("setSpeedX(0.0)"));
         assertTrue(robot.toString().contains("setSpeedY(0.0)"));
         assertTrue(robot.toString().contains("leftButtonPress"));
@@ -83,7 +81,6 @@ public class MouseControllerTest {
         mc.disConnectTheMouse();
         assertFalse(mc.isConnectedToMouse());
 
-        System.out.println(robot.toString());
         assertTrue(robot.toString().contains("setSpeedX(7.5)"));  // Speed should be halved
         assertTrue(robot.toString().contains("setSpeedY(50.0)")); // Speed should be doubled
         assertTrue(robot.toString().contains("leftButtonRelease"));
@@ -98,11 +95,10 @@ public class MouseControllerTest {
         MouseController mc = new MouseController(robot, new long[]{0, 10, 20}, 1, new long[]{0, 20, 30}, 1);
         mc.connectTheMouse();
         assertTrue(mc.isConnectedToMouse());
-        mc.reading(Reading.parse("0,25,15,0,1,1,1:", true, true));
+        mc.reading(Reading.parse("0,25,15,1,0,1,1:", true, true));
         mc.disConnectTheMouse();
         assertFalse(mc.isConnectedToMouse());
 
-        System.out.println(robot.toString());
         assertTrue(robot.toString().contains("setSpeedX(15.0)"));
         assertTrue(robot.toString().contains("setSpeedY(25.0)"));
         assertTrue(robot.toString().contains("leftButtonPress"));
@@ -116,7 +112,6 @@ public class MouseControllerTest {
         RobotMouseThreadInterface robot = createMockRobotMouseThread();
         MouseController mc = new MouseController(robot, new long[]{0, 10, 20}, 1, new long[]{0, 20, 30}, 1);
         mc.reading(Reading.parse("0,0,0,1,1,1,1:", true, true));
-        System.out.println(robot.toString());
         assertFalse(robot.toString().contains("setSpeed"));
         assertFalse(robot.toString().contains("Button"));
     }

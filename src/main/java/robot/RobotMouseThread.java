@@ -22,19 +22,30 @@ import java.awt.event.InputEvent;
 
 /**
  * Move the mouse in the background using the robot package.
- * 
+ *
  * All mouse moves and button presses occur in the thread (run method).
- * 
+ *
  * There were issues when the mouse button methods were called in another thread
  * so all calls to the robot API were moved to the thread (run method).
- * 
+ *
  * I think this is an issue with the way the robot API works.
- * 
+ *
  */
 public class RobotMouseThread extends Thread implements RobotMouseThreadInterface {
 
-    private enum ButtonState {
-        DOWN, IS_DOWN, UP, IS_UP
+    /**
+     * The State of a given button.
+     * 
+     * REQUEST_DOWN - Requested to press button down. 
+     * IS_DOWN - Thread has set button DOWN.
+     * REQUEST_UP - Requested to release button. 
+     * IS_UP - Thread has set button UP.
+     * 
+     * The thread MUST be running and connected for REQUEST_DOWN to 
+     * change to IS_DOWN and REQUEST_UP to change to IS_UP.
+     */
+    public static enum ButtonState {
+        REQUEST_DOWN, IS_DOWN, REQUEST_UP, IS_UP
     }
 
     private final static double MOUSE_NOT_IN_POSITION_TOLLERANCE = 20.0;
@@ -57,8 +68,8 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
     private double mouseY;
     private boolean hasSpeed = false;
     private boolean connected = false;
-    private ButtonState buttonLeftPressed;
-    private ButtonState buttonRightPressed;
+    private ButtonState buttonLeftState;
+    private ButtonState buttonRightState;
 
     /**
      * @param listener Listen to events caused by the robot mouse movement.
@@ -74,9 +85,19 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
         }
         this.listener = listener;
         this.screenBounds = screenBounds;
+        /*
+        Assume the buttons are UP when we start!
+        */
         this.stopMouse();
-    }
+        buttonLeftState = ButtonState.IS_UP;
+        buttonRightState = ButtonState.IS_UP;
+     }
 
+    /**
+     * Stop the mouse. This also releases the button state 
+     * 
+     * Note this only happens as long as the we are still connected and the thread is running.
+     */
     public final void stopMouse() {
         setSpeedX(0.0);
         setSpeedY(0.0);
@@ -84,10 +105,11 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
         mouseX = p.x;
         mouseY = p.y;
         outOfPositionCounts = 0;
-        buttonLeftPressed = ButtonState.IS_UP;
-        buttonRightPressed = ButtonState.IS_UP;
+        buttonLeftState = ButtonState.REQUEST_UP;
+        buttonRightState = ButtonState.REQUEST_UP;
     }
 
+    @Override
     public final void moveMouseAbs(double x, double y) {
         if (x < screenBounds.getMinX()) {
             x = screenBounds.getMinX();
@@ -151,26 +173,58 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
     public double getSpeedX() {
         return speedX;
     }
-    
+
+    @Override
     public boolean isConnected() {
         return connected;
     }
-    
+
+    @Override
     public void disConnect() {
-        this.connected = false;
         stopMouse();
-        if (listener!=null) {
+        if (listener != null) {
             listener.disConnectedMouse();
         }
+        /*
+        Before we can disconnect we need to wait for the buttons to come up!
+        stopMouse() releases each button but the thread needs to run to actually
+        release them so we cannot disconnect untill both are UP.
+        
+        Count the number of loops so we dont wait forever and lock up the program.
+        1 second should be loads of time.
+         */
+        int count = 0;
+        while ((!buttonLeftState.equals(ButtonState.IS_UP)) || (!buttonRightState.equals(ButtonState.IS_UP))) {
+            try {
+                sleep(10);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace(); // This is OK as it is VERY unlikely to be inturrnpted!
+            }
+            count++;
+            if (count > 100) {
+                break;
+            }
+        }
+        this.connected = false;
+
     }
-    
+
+    public ButtonState getButtonLeftState() {
+        return buttonLeftState;
+    }
+
+    public ButtonState getButtonRightState() {
+        return buttonRightState;
+    }
+
     @Override
     public void connect() {
         this.connected = true;
-        if (listener!=null) {
+        if (listener != null) {
             listener.connectedMouse();
         }
     }
+
     /**
      * Stop the thread and any mouse movement
      */
@@ -179,12 +233,14 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
         canRun = false;
     }
 
+    @Override
     public boolean isLeftButtonPressed() {
-        return buttonLeftPressed.equals(ButtonState.IS_DOWN);
+        return buttonLeftState.equals(ButtonState.IS_DOWN);
     }
 
+    @Override
     public boolean isRightButtonPressed() {
-        return buttonRightPressed.equals(ButtonState.IS_DOWN);
+        return buttonRightState.equals(ButtonState.IS_DOWN);
     }
 
     /**
@@ -196,11 +252,12 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
      * ButtonState ensures that the call to the robot only occurs when the state
      * changes.
      */
+    @Override
     public void leftButtonPress() {
-        switch (buttonLeftPressed) {
+        switch (buttonLeftState) {
             case IS_UP:
-            case UP:
-                buttonLeftPressed = ButtonState.DOWN;
+            case REQUEST_UP:
+                buttonLeftState = ButtonState.REQUEST_DOWN;
         }
     }
 
@@ -213,11 +270,12 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
      * ButtonState ensures that the call to the robot only occurs when the state
      * changes.
      */
+    @Override
     public void leftButtonRelease() {
-        switch (buttonLeftPressed) {
+        switch (buttonLeftState) {
             case IS_DOWN:
-            case DOWN:
-                buttonLeftPressed = ButtonState.UP;
+            case REQUEST_DOWN:
+                buttonLeftState = ButtonState.REQUEST_UP;
         }
     }
 
@@ -230,11 +288,12 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
      * ButtonState ensures that the call to the robot only occurs when the state
      * changes.
      */
+    @Override
     public void rightButtonPress() {
-        switch (buttonRightPressed) {
+        switch (buttonRightState) {
             case IS_UP:
-            case UP:
-                buttonRightPressed = ButtonState.DOWN;
+            case REQUEST_UP:
+                buttonRightState = ButtonState.REQUEST_DOWN;
         }
     }
 
@@ -247,11 +306,12 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
      * ButtonState ensures that the call to the robot only occurs when the state
      * changes.
      */
+    @Override
     public void rightButtonRelease() {
-        switch (buttonRightPressed) {
+        switch (buttonRightState) {
             case IS_DOWN:
-            case DOWN:
-                buttonRightPressed = ButtonState.UP;
+            case REQUEST_DOWN:
+                buttonRightState = ButtonState.REQUEST_UP;
         }
     }
 
@@ -288,16 +348,17 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
         long timeNow = System.currentTimeMillis();
         long lastTimeMoved = timeNow;
         double time;
-        while (canRun) {
-            if (hasSpeed) {
-                timeNow = System.currentTimeMillis();
-                time = (timeNow - lastTimeMoved) / (1000.0);
-                moveMouseRel(speedX * time, speedY * time);
-                lastTimeMoved = timeNow;
-            } else {
-                lastTimeMoved = System.currentTimeMillis();
-            }
-            /*
+        try {
+            while (canRun) {
+                if (hasSpeed) {
+                    timeNow = System.currentTimeMillis();
+                    time = (timeNow - lastTimeMoved) / (1000.0);
+                    moveMouseRel(speedX * time, speedY * time);
+                    lastTimeMoved = timeNow;
+                } else {
+                    lastTimeMoved = System.currentTimeMillis();
+                }
+                /*
             Press or release the LEFT button once when the it's state changes
             State 1: IS_UP - The steady released state. No action required here.
             State 2: DOWN - set by calling leftPress() above
@@ -307,36 +368,45 @@ public class RobotMouseThread extends Thread implements RobotMouseThreadInterfac
             State 2: UP - set by calling leftRelease() above
             State 3: IS_UP - Set after robot.mouseRelease is called.
             ...
-             */
-            if (connected) {
-                switch (buttonLeftPressed) {
-                    case UP:
-                        robotMouse.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-                        buttonLeftPressed = ButtonState.IS_UP;
-                        break;
-                    case DOWN:
-                        robotMouse.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                        buttonLeftPressed = ButtonState.IS_DOWN;
-                        break;
-                }
-                /*
+                 */
+                if (connected) {
+                    switch (buttonLeftState) {
+                        case REQUEST_UP:
+                            robotMouse.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                            buttonLeftState = ButtonState.IS_UP;
+                            break;
+                        case REQUEST_DOWN:
+                            robotMouse.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                            buttonLeftState = ButtonState.IS_DOWN;
+                            break;
+                    }
+                    /*
             Press or release the RIGHT button once when the it's state changes
             Same logic as LEFT button
-                 */
-                switch (buttonRightPressed) {
-                    case UP:
-                        robotMouse.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-                        buttonRightPressed = ButtonState.IS_UP;
-                        break;
-                    case DOWN:
-                        robotMouse.mousePress(InputEvent.BUTTON3_DOWN_MASK);
-                        buttonRightPressed = ButtonState.IS_DOWN;
-                        break;
+                     */
+                    switch (buttonRightState) {
+                        case REQUEST_UP:
+                            robotMouse.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+                            buttonRightState = ButtonState.IS_UP;
+                            break;
+                        case REQUEST_DOWN:
+                            robotMouse.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+                            buttonRightState = ButtonState.IS_DOWN;
+                            break;
+                    }
+                }
+                if (canRun) {
+                    robotMouse.delay(30);
                 }
             }
-            if (canRun) {
-                robotMouse.delay(30);
-            }
+        } finally {
+            /*
+            Always release the mouse buttons!
+             */
+            robotMouse.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+            buttonRightState = ButtonState.IS_UP;
+            robotMouse.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            buttonLeftState = ButtonState.IS_UP;
         }
     }
 }
