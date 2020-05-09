@@ -55,18 +55,20 @@ Quit the applicaton and plug the sensor in.
 
 Restart the application and select the port that has been added to the list.
 
-You can not press the Connect button.
+You can now press the Connect button.
 
-The sensor you have selected will now be saved fornext time you run the application.
+The sensor you have selected will be saved for the next time you run the application.
 
 ## Calibration controls
-Therre are two calibration controls, one for Heading (Left to Right) and one for vertical movement (Up and Down).
+### Vertical (Pitch)
+There are two calibration controls, one for Heading (Left to Right) and one for vertical (pitch) movement (Up and Down).
 
-The graphical display will be displaying a track of the last 50 vertical readings from the sensor and 5 lines that show the boundaries. 
+The graphical display will be displaying a track of the last 50 vertical (pitch) readings from the sensor and 5 lines that show the boundaries. **See screen shot above**. 
 
 Pressing the Vertical calibrate button will position the boundaries around the latest vertical sensor reading.
 
-The graphical display will be displaying a compass (like a clock face) with hands that show the current Heading and the heading boundaries. 
+### Heading (direction)
+The graphical display will be displaying a compass (like a clock face) with hands that show the current Heading and the heading boundaries. **See screen shot above**.
 
 Pressing the Heading calibrate button will position the boundaries around the latest heading sensor reading.
 
