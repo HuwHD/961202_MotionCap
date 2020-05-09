@@ -3,11 +3,11 @@
 
 This application and hardware are designed for people who have restricted movment and are unable to use a normal mouse as a pointing device.
 
-It allows the user to move the mouse usinh natural head movements.
+It allows the user to move the mouse using natural head movements.
 
 The low cost motion tracking sensors are attached to a hat or helmet and once connected the mouse can be moved by moving the head leftto right and up and down.
 
-# Hadrware
+# Hardware
 The application uses two BBC MicroBit devices. One to track the movement and transmit the data, the other to receive the data and send it to the computer.
 
 # Software
