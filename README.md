@@ -92,7 +92,7 @@ The option is saved for the next time the application runs.
 ## The Graphical display:
 This displays graphically the status of the sensor and the button options.
 
-TODO: Insert picture here.
+![Screen Shot](https://github.com/HuwHD/961202_MotionCap/blob/master/ScreenShots.png)
 
 ## The Status area:
 This displays the raw data coming from the sensor and the connection status.
