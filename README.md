@@ -195,3 +195,98 @@ calibrate.swapUpDown=false
 #
 debug.sensordata=false
 ```
+## **Software Lisenses**
+
+### **Java 11 (LTS) with JavaFX** (OpenJDK)
+Zulu Community Terms of Use
+
+https://www.azul.com/products/zulu-and-zulu-enterprise/zulu-terms-of-use/
+
+### **Java Serial Communications API (purejavacomm).**
+purejavacomm is BSD licensed but please note it depends on JNA which is LGPL/ASL dual licensed.
+
+### **Java Robot**
+
+Java robot is covered by the Zule Java 11 lisence. 
+
+### **Apache NetBeans** 
+
+Apache Netbeans from the Apache Software Foundation was used for all Java Development. 
+
+This IDE is Open Source and free to use.
+
+Licensed under the Apache license, version 2.0
+
+### **Gradle**
+
+Gradle is the Java Build tool used to compile the Java. Using Gradle means that the software build, test and package process in independent of the IDE. 
+
+It also means that the project can be built on Linux or Windows from the command line.
+
+Gradle is Open Source and free to use.
+
+Licensed under the Apache license, version 2.0
+
+### *Other*
+
+All images in the documentation are royalty free images and are free to use without attributation.
+
+All other images were taken and edited by me and are not subject to lisensing.
+
+## **References**
+### **Java 11 (LTS) with JavaFX**
+
+https://www.azul.com/downloads/zulu-community/?architecture=x86-64-bit&package=jdk
+
+### **JavaFX design patterns:**
+
+Long-running operations must not be run on the JavaFX application thread, since this prevents JavaFX from updating the UI, resulting in a frozen UI.
+
+https://riptutorial.com/javafx/example/7291/updating-the-ui-using-platform-runlater
+
+### **Java Serial Communications API (purejavacomm).**
+
+https://github.com/nyholku/purejavacomm
+
+#### Example code
+https://java-browser.yawk.at/com.github.purejavacomm/purejavacomm/1.0.2.RELEASE/purejavacomm/example/Example1.java
+
+
+### **The gradle.build template for Javafx.**
+The Gradle build was derived from this example. Changes were made for Java 11 (LTS) and to generate an executable jar.
+
+https://github.com/pelamfi/gradle-javafx-hello-world-app/blob/master/build.gradle
+
+### **Java Robot**
+
+https://docs.oracle.com/javase/9/docs/api/java/awt/Robot.html
+
+#### Example code
+
+https://alvinalexander.com/java/java-robot-class-example-mouse-keystroke/
+
+### **The observer pattern.**
+
+The observer pattern is used within the application. It defines a one-to-many dependency between objects so that when one object changes state, all of its dependents are notified and updated automatically.
+
+The object which is being watched is called the **subject**. The objects which are watching the state changes are called **observers** or **listeners**.
+
+The **subject** package defines an interface for the **listeners** to implement.
+
+https://www.vogella.com/tutorials/DesignPatternObserver/article.html
+
+#### Subject: SerialMonitorThread
+#### Listener: SerialPortListener (interface)
+This uses the Observer Pattern to notify listeners of changes in the sensor.
+* A sensor reading has been scanned successfully
+* A sensor reading has failed to scan and is invalid.
+* The sensor is connected
+* The sensor is disconnected
+  
+#### Subject: RobotMouseThread
+#### Listener: RobotMouseEventListener (interface)
+
+This uses the Observer pattern to notify listeners of changes in the mouse controller.
+* When the mouse pointer is not in the expected position. This occurs us the user moves the real mouse. Control can be passed back to the real mouse and the sensor is disconnected.
+* When the robot mouse takes control of the mouse pointer.
+* When the robot releases control of the mouse pointer.
