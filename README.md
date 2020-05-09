@@ -36,6 +36,67 @@ build/libs/961202_MotionCap.jar
 2. On Windows:
    1. java -jar build\libs\961202_MotionCap.jar config.properties
 
+# Using the Graphical User Interface
+The GUI is designed to display the sensor data to allow the user to understand how moving the sensor changes that data. 
+
+The GUI has three areas:
+1.  The controls for connecting to the sensor, calibrating the sensor and changing sensor options.
+2.  The Graphical display displaying live data from the sensor.
+3.  The status area displaying raw connection data and connection status.
+
+## Connection controls
+This displays a Drop dow list of currently available ports that the sensor is connected to.
+
+The easy way to fine the port is to start tha application without the sensor receiver plugged in and not the list of ports.
+
+Quit the applicaton and plug the sensor in. 
+
+Restart the application and select the port that has been added to the list.
+
+You can not press the Connect button.
+
+The sensor you have selected will now be saved fornext time you run the application.
+
+## Calibration controls
+Therre are two calibration controls, one for Heading (Left to Right) and one for vertical movement (Up and Down).
+
+The graphical display will be displaying a track of the last 50 vertical readings from the sensor and 5 lines that show the boundaries. 
+
+Pressing the Vertical calibrate button will position the boundaries around the latest vertical sensor reading.
+
+The graphical display will be displaying a compass (like a clock face) with hands that show the current Heading and the heading boundaries. 
+
+Pressing the Heading calibrate button will position the boundaries around the latest heading sensor reading.
+
+The calibrations are saved for the next time the application runs.
+
+## Options 
+**Start:** This will connect the mouce cursor to the sensor and the mouse will start moving. The text on the button now changes to **Stop**
+
+**Stop:** This will stop the mouse moving.
+
+The mouse can also be stopped by moving the real mouse.
+
+**Swap L/R Buttons:** This will swap the buttons on the sensor (currently labled A and B). 
+
+This is required is the mechanism for pressing the buttons changes. The effect is to swap the A and B buttons and thus change the Left and Right click options. 
+
+The option is saved for the next time the application runs.
+
+**Swap UP/DOWN** This changes the vertical motion. When the sensor sends data that is interpreted as 'looking up' the mouse should muve UP. 
+
+If this is not happening then select this option.
+
+The option is saved for the next time the application runs.
+
+## The Graphical display:
+This displays graphically the status of the sensor and the button options.
+
+TODO: Insert picture here.
+
+## The Status area:
+This displays the raw data coming from the sensor and the connection status.
+
 # Configuration
 The application uses a simple configuration properties file. The name of this file is passed to the application when run.
 
