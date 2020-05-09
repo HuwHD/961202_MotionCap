@@ -40,9 +40,11 @@ build/libs/961202_MotionCap.jar
 The GUI is designed to display the sensor data to allow the user to understand how moving the sensor changes that data. 
 
 The GUI has three areas:
-1.  The controls for connecting to the sensor, calibrating the sensor and changing sensor options.
-2.  The Graphical display displaying live data from the sensor.
-3.  The status area displaying raw connection data and connection status.
+1.  **Top:** The controls for connecting to the sensor, calibrating the sensor and changing sensor options.
+2.  **Middle:** The Graphical display displaying live data from the sensor.
+3.  **Bottom:** The status area displaying raw connection data and connection status.
+
+![Screen Shot](https://github.com/HuwHD/961202_MotionCap/blob/master/ScreenShots.png)
 
 ## Connection controls
 This displays a Drop dow list of currently available ports that the sensor is connected to.
@@ -92,7 +94,7 @@ The option is saved for the next time the application runs.
 ## The Graphical display:
 This displays graphically the status of the sensor and the button options.
 
-![Screen Shot](https://github.com/HuwHD/961202_MotionCap/blob/master/ScreenShots.png)
+**See the Screen Shot above for details**
 
 ## The Status area:
 This displays the raw data coming from the sensor and the connection status.
