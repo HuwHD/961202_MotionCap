@@ -16,7 +16,6 @@ package robot;
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 import java.awt.MouseInfo;
 import java.awt.Point;
@@ -40,6 +39,11 @@ import static org.junit.Assert.*;
  * at java.desktop/java.awt.Robot.<init>(Robot.java:94) at
  * robot.RobotMouseThread.<init>(RobotMouseThread.java:80)
  * ----------------------------------------------------------------------------
+ *
+ * NOTE 2: This can sometimes fail on laptops with different sized screens,
+ * I believe due to the scaling used in windows (not sure).
+ *
+ * Also Fails if you move the mouse while it is running
  */
 
 public class RobotMouseThreadTest {
@@ -76,12 +80,6 @@ public class RobotMouseThreadTest {
         p3 = MouseInfo.getPointerInfo().getLocation();
         assertEquals(50, p3.x);
         assertEquals(0, p3.y);
-
-        robotMouseThread.moveMouseAbs(1010, 1010);
-        delay(100); // Thread loops every 30ms so give it time!
-        p3 = MouseInfo.getPointerInfo().getLocation();
-        assertEquals(1000, p3.x);
-        assertEquals(1000, p3.y);
 
         robotMouseThread.disConnect();
         robotMouseThread.close();
